@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,6 @@ import { authStyles } from "@/assets/styles/auth.styles";
 import {
   validateEmail,
   validatePassword,
-  validatePasswordMatch,
   validateVerificationCode,
   normalizeEmail,
   getUserFriendlyError,
@@ -30,9 +29,9 @@ export default function SignUpScreen() {
   const router = useRouter();
 
   // Form state
+  const [fullName, setFullName] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -42,7 +41,7 @@ export default function SignUpScreen() {
   // Error states
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [fullNameError, setFullNameError] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
@@ -57,6 +56,18 @@ export default function SignUpScreen() {
   if (isSignedIn) {
     return null;
   }
+
+  // Handle full name input change
+  const handleFullNameChange = (text: string) => {
+    setFullName(text);
+    if (submitted && text.trim()) {
+      if (text.trim().length < 2) {
+        setFullNameError("Full name must be at least 2 characters");
+      } else {
+        setFullNameError(null);
+      }
+    }
+  };
 
   // Handle email input change
   const handleEmailChange = (text: string) => {
@@ -76,15 +87,6 @@ export default function SignUpScreen() {
     }
   };
 
-  // Handle confirm password input change
-  const handleConfirmPasswordChange = (text: string) => {
-    setConfirmPassword(text);
-    if (submitted && text) {
-      const validation = validatePasswordMatch(password, text);
-      setConfirmPasswordError(validation.error || null);
-    }
-  };
-
   // Handle code input change
   const handleCodeChange = (text: string) => {
     setCode(text.replace(/[^0-9]/g, "")); // Only allow digits
@@ -98,6 +100,14 @@ export default function SignUpScreen() {
   const validateAllFields = (): boolean => {
     let isValid = true;
     setGeneralError(null);
+
+    // Full name validation
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setFullNameError("Full name must be at least 2 characters");
+      isValid = false;
+    } else {
+      setFullNameError(null);
+    }
 
     // Email validation
     const emailValidation = validateEmail(normalizeEmail(emailAddress));
@@ -115,15 +125,6 @@ export default function SignUpScreen() {
       isValid = false;
     } else {
       setPasswordError(null);
-    }
-
-    // Confirm password validation
-    const confirmValidation = validatePasswordMatch(password, confirmPassword);
-    if (!confirmValidation.valid) {
-      setConfirmPasswordError(confirmValidation.error || null);
-      isValid = false;
-    } else {
-      setConfirmPasswordError(null);
     }
 
     // Terms validation
@@ -144,9 +145,16 @@ export default function SignUpScreen() {
     }
 
     try {
+      // Split full name into first and last
+      const nameParts = fullName.trim().split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(" ") || "";
+
       const { error } = await signUp.password({
         emailAddress: normalizeEmail(emailAddress),
         password,
+        firstName,
+        lastName,
       });
 
       if (error) {
@@ -354,6 +362,26 @@ export default function SignUpScreen() {
             </View>
           )}
 
+          {/* Full Name Field */}
+          <View style={authStyles.fieldContainer}>
+            <Text style={authStyles.label}>Full Name</Text>
+            <TextInput
+              style={[
+                authStyles.input,
+                focusedField === "fullName" && authStyles.inputFocused,
+                fullNameError && authStyles.inputError,
+              ]}
+              placeholder="John Doe"
+              placeholderTextColor={COLORS.textLight}
+              value={fullName}
+              onChangeText={handleFullNameChange}
+              onFocus={() => setFocusedField("fullName")}
+              onBlur={() => setFocusedField(null)}
+              editable={!isLoading}
+            />
+            {fullNameError && <Text style={authStyles.errorText}>{fullNameError}</Text>}
+          </View>
+
           {/* Email Field */}
           <View style={authStyles.fieldContainer}>
             <Text style={authStyles.label}>Email Address</Text>
@@ -426,29 +454,6 @@ export default function SignUpScreen() {
             )}
           </View>
 
-          {/* Confirm Password Field */}
-          <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Confirm Password</Text>
-            <TextInput
-              style={[
-                authStyles.input,
-                focusedField === "confirmPassword" && authStyles.inputFocused,
-                confirmPasswordError && authStyles.inputError,
-              ]}
-              placeholder="Re-enter your password"
-              placeholderTextColor={COLORS.textLight}
-              value={confirmPassword}
-              onChangeText={handleConfirmPasswordChange}
-              onFocus={() => setFocusedField("confirmPassword")}
-              onBlur={() => setFocusedField(null)}
-              secureTextEntry
-              editable={!isLoading}
-            />
-            {confirmPasswordError && (
-              <Text style={authStyles.errorText}>{confirmPasswordError}</Text>
-            )}
-          </View>
-
           {/* Terms & Conditions Checkbox */}
           <Pressable
             style={authStyles.checkboxContainer}
@@ -488,9 +493,9 @@ export default function SignUpScreen() {
             onPress={handleSignUpSubmit}
             disabled={
               isLoading ||
+              !fullName.trim() ||
               !emailAddress.trim() ||
               !password.trim() ||
-              !confirmPassword.trim() ||
               !termsAccepted
             }
           >
