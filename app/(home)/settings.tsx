@@ -82,7 +82,7 @@ export default function SettingsScreen() {
                 borderBottomWidth: 1,
                 borderBottomColor: COLORS.border,
                 paddingBottom: 16,
-                paddingTop: 30,
+                paddingTop: 25,
               },
             ]}
           >
