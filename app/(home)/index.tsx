@@ -14,10 +14,17 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image
-              source={require("../../assets/images/icon.png")}
-              style={styles.headerLogo}
-            />
+            {user?.imageUrl ? (
+              <Image
+                source={{ uri: user.imageUrl }}
+                style={[styles.headerLogo, { borderRadius: 50 }]}
+              />
+            ) : (
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={styles.headerLogo}
+              />
+            )}
             <View style={styles.welcomeContainer}>
               <Text style={styles.welcomeText}>Welcome</Text>
               <Text style={styles.usernameText}>{userName}</Text>
