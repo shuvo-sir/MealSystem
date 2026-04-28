@@ -1,4 +1,5 @@
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "../../assets/styles/home.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { BalanceCard } from "@/components/BalanceCard";
@@ -10,7 +11,7 @@ export default function HomeScreen() {
   const userName = user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "User";
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -39,6 +40,6 @@ export default function HomeScreen() {
         </View>
         <BalanceCard summary={{ balance: 1000, income: 2000, expenses: 1000 }} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

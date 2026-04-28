@@ -4,7 +4,6 @@ import {
   Text,
   Pressable,
   ScrollView,
-  SafeAreaView, 
   Alert,
   Modal,
   TextInput,
@@ -14,6 +13,7 @@ import {
   Switch,
   Linking,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useClerk, useUser } from "@clerk/expo";
 import { useRouter } from "expo-router";
@@ -71,6 +71,10 @@ export default function SettingsScreen() {
     mealReminders: true,
     frequency: 'daily',
   });
+
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+
+
 
   // Load notification preferences on component mount
   useEffect(() => {
@@ -245,7 +249,7 @@ export default function SettingsScreen() {
         mediaTypes: ['images'], // Updated from deprecated MediaTypeOptions
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 1,
       });
 
       if (!result.canceled && result.assets.length > 0) {
@@ -344,31 +348,53 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { paddingHorizontal: 0 }]}>
+    <SafeAreaView edges={["top"]} style={[styles.container, { paddingHorizontal: 0 }]}>
       <ScrollView>
         <View style={styles.content}>
+          <View>
+            <Text style={{
+              fontSize: 24, 
+              fontWeight: 'bold', 
+              color: COLORS.text,
+              paddingHorizontal: 20,
+              borderBottomWidth: 1,
+              borderBottomColor: COLORS.border,
+              paddingBottom: 16,
+              paddingTop: 10,
+            }}
+              >Settings</Text>
+
+          </View>
+
           <View
             style={[
               styles.header,
               {
+                flexDirection: "row",
                 paddingHorizontal: 20,
-                marginBottom: 32,
+                paddingVertical: 16,
                 borderBottomWidth: 1,
                 borderBottomColor: COLORS.border,
-                paddingBottom: 16,
-                paddingTop: 27,
+                gap: 5,
               },
             ]}
           >
-            <Text style={styles.usernameText}>Settings</Text>
-            <Text
-              style={[
-                styles.welcomeText,
-                { marginTop: 8, fontSize: 14, color: COLORS.textLight },
-              ]}
-            >
-              {user?.emailAddresses?.[0]?.emailAddress}
-            </Text>
+            <Image
+              source={{ uri: user?.imageUrl }}
+              style={{width: 75, height: 75, borderRadius: 37.5, }}
+            />
+            <View style={styles.welcomeContainer}>
+              <Text style={[styles.usernameText, {color: COLORS.textLight}]}>{userName}</Text>
+              <Text
+                style={[
+                  styles.welcomeText,
+                  { marginTop: 2, fontSize: 14, color: COLORS.textLight },
+                ]}
+              >
+                {user?.emailAddresses?.[0]?.emailAddress}
+              </Text>
+            </View>
+
           </View>
 
           <View>
