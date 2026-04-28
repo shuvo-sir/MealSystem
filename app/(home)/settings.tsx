@@ -71,8 +71,9 @@ export default function SettingsScreen() {
     mealReminders: true,
     frequency: 'daily',
   });
+  const [avatarImageFailed, setAvatarImageFailed] = useState(false);
 
-  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username || user?.emailAddresses?.[0]?.emailAddress || 'Unnamed user';
 
 
 
@@ -379,10 +380,28 @@ export default function SettingsScreen() {
               },
             ]}
           >
-            <Image
-              source={{ uri: user?.imageUrl }}
-              style={{width: 75, height: 75, borderRadius: 37.5, }}
-            />
+            {user?.imageUrl && !avatarImageFailed ? (
+              <Image
+                source={{ uri: user.imageUrl }}
+                style={{width: 75, height: 75, borderRadius: 37.5, }}
+                onError={() => setAvatarImageFailed(true)}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 75,
+                  height: 75,
+                  borderRadius: 37.5,
+                  backgroundColor: COLORS.primary,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 24, fontWeight: 'bold', color: COLORS.white }}>
+                  {firstName?.[0]?.toUpperCase() || 'U'}
+                </Text>
+              </View>
+            )}
             <View style={styles.welcomeContainer}>
               <Text style={[styles.usernameText, {color: COLORS.textLight}]}>{userName}</Text>
               <Text

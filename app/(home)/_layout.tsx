@@ -57,6 +57,17 @@ export default function HomeRoutesLayout() {
           ),
         }}
       />
+
+       <Tabs.Screen
+        name="my_meal"
+        options={{
+          title: "My Meal",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="fast-food" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="settings"
         options={{
@@ -66,6 +77,7 @@ export default function HomeRoutesLayout() {
           ),
         }}
       />
+
     </Tabs>
   );
 }
