@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useSignIn, useAuth } from "@clerk/expo";
 import { authStyles } from "@/assets/styles/auth.styles";
@@ -263,12 +264,13 @@ export default function SignInScreen() {
   // MFA Verification Step UI
   if (isMFAStep) {
     return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={authStyles.container}
-      >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
-          <View style={authStyles.innerContainer}>
+      <SafeAreaView edges={["top"]} style={authStyles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <ScrollView contentContainerStyle={authStyles.scrollContent}>
+            <View style={authStyles.innerContainer}>
             <View style={authStyles.header}>
               <Text style={authStyles.title}>Verify Your Identity</Text>
               <Text style={authStyles.subtitle}>
@@ -354,17 +356,19 @@ export default function SignInScreen() {
             </Pressable>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     );
   }
 
   // Sign-in Step UI
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={authStyles.container}
-    >
-      <ScrollView contentContainerStyle={authStyles.scrollContent}>
+    <SafeAreaView edges={["top"]} style={authStyles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={authStyles.scrollContent}>
         <View style={authStyles.innerContainer}>
           <View style={authStyles.header}>
             <Text style={authStyles.title}>Welcome Back</Text>
@@ -461,6 +465,7 @@ export default function SignInScreen() {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

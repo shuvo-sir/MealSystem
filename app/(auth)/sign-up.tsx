@@ -10,6 +10,7 @@ import {
   Platform,
   Linking,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useSignUp, useAuth } from "@clerk/expo";
 import { authStyles } from "@/assets/styles/auth.styles";
@@ -247,12 +248,13 @@ export default function SignUpScreen() {
   // Verification step UI
   if (isVerificationStep) {
     return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={authStyles.container}
-      >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
-          <View style={authStyles.innerContainer}>
+      <SafeAreaView edges={["top"]} style={authStyles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <ScrollView contentContainerStyle={authStyles.scrollContent}>
+            <View style={authStyles.innerContainer}>
             <View style={authStyles.header}>
               <Text style={authStyles.title}>Verify Your Email</Text>
               <Text style={authStyles.subtitle}>
@@ -337,17 +339,19 @@ export default function SignUpScreen() {
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     );
   }
 
   // Sign-up step UI
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={authStyles.container}
-    >
-      <ScrollView contentContainerStyle={authStyles.scrollContent}>
+    <SafeAreaView edges={["top"]} style={authStyles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={authStyles.scrollContent}>
         <View style={authStyles.innerContainer}>
           <View style={authStyles.header}>
             <Text style={authStyles.title}>Create Account</Text>
@@ -521,6 +525,7 @@ export default function SignUpScreen() {
           <View nativeID="clerk-captcha" />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
