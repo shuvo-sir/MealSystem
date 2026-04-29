@@ -58,12 +58,14 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        justifyContent: "center",
 
     },
     addButtonText: {
         color: COLORS.white,
         marginLeft: 4,
         fontWeight: "600",
+        textAlign: "center",
     },
     balanceCard: {
         backgroundColor: COLORS.card,
