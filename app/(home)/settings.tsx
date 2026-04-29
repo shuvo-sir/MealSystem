@@ -479,6 +479,7 @@ export default function SettingsScreen() {
                   backgroundColor: COLORS.expense,
                   marginHorizontal: 0,
                   opacity: pressed ? 0.8 : 1,
+                  
                 },
               ]}
               onPress={handleSignOut}
