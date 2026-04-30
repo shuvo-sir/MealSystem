@@ -1,4 +1,4 @@
-import { Image, Text, TouchableOpacity, View, FlatList, TextInput, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Image, Text, TouchableOpacity, View, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "../../assets/styles/home.styles";
 import { Ionicons } from "@expo/vector-icons";
@@ -126,23 +126,18 @@ export default function HomeScreen() {
       .join(", ");
   };
 
-  // FlatList data structure
-  const flatListData = [
-    { id: "header", type: "header" },
-    { id: "balance", type: "balance" },
-    { id: "mealTitle", type: "mealTitle" },
-    { id: "mealCards", type: "mealCards" },
-    { id: "selectedMeals", type: "selectedMeals" },
-    { id: "notesTitle", type: "notesTitle" },
-    { id: "notesInput", type: "notesInput" },
-    { id: "notesList", type: "notesList" },
-  ];
-
-  // Render individual list items
-  const renderItem = ({ item }: any) => {
-    switch (item.type) {
-      case "header":
-        return (
+  return (
+    <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          {/* Header Section */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               {user?.imageUrl ? (
@@ -168,16 +163,12 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        );
 
-      case "balance":
-        return <BalanceCard summary={{ balance: 1000, "Total Meal": 2000, "Total expenses": 1000 }} />;
+          {/* Balance Card Section */}
+          <BalanceCard summary={{ balance: 1000, "Total Meal": 2000, "Total expenses": 1000 }} />
 
-      case "mealTitle":
-        return <Text style={styles.mealSectionTitle}>Add Your Meal</Text>;
-
-      case "mealCards":
-        return (
+          {/* Meal Selection Section */}
+          <Text style={styles.mealSectionTitle}>Add Your Meal</Text>
           <View style={styles.mealCardsContainer}>
             {meals.map((meal) => {
               const isSelected = selectedMeals.includes(meal.id);
@@ -200,20 +191,16 @@ export default function HomeScreen() {
               );
             })}
           </View>
-        );
 
-      case "selectedMeals":
-        return selectedMeals.length > 0 ? (
-          <View style={styles.selectedMealsContainer}>
-            <Text style={styles.selectedMealsText}>Selected: {getSelectedMealNames()}</Text>
-          </View>
-        ) : null;
+          {/* Selected Meals Display */}
+          {selectedMeals.length > 0 && (
+            <View style={styles.selectedMealsContainer}>
+              <Text style={styles.selectedMealsText}>Selected: {getSelectedMealNames()}</Text>
+            </View>
+          )}
 
-      case "notesTitle":
-        return <Text style={styles.noteSectionTitle}>Meal Notes</Text>;
-
-      case "notesInput":
-        return (
+          {/* Meal Notes Section */}
+          <Text style={styles.noteSectionTitle}>Meal Notes</Text>
           <View style={styles.noteInputContainer}>
             <TextInput
               style={styles.noteInput}
@@ -233,10 +220,8 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        );
 
-      case "notesList":
-        return (
+          {/* Notes List Section */}
           <View style={styles.notesListContainer}>
             {notesList.length > 0 ? (
               <>
@@ -264,29 +249,7 @@ export default function HomeScreen() {
               <Text style={styles.emptyNotesText}>No notes yet. Add one to get started! 📝</Text>
             )}
           </View>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
-        <FlatList
-          data={flatListData}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
-          scrollEnabled={true}
-          nestedScrollEnabled={true}
-        />
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
