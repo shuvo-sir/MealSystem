@@ -4,8 +4,8 @@ import { COLORS } from "../constants/colors";
 
 type Summary = {
   balance: number | string;
-  income: number | string;
-  expenses: number | string;
+  "Total Meal": number | string;
+  "Total expenses": number | string;
 };
 
 type BalanceCardProps = {
@@ -22,18 +22,18 @@ export const BalanceCard = ({ summary }: BalanceCardProps) => {
 
       <View style={styles.balanceStats}>
             <View style={styles.balanceStatItem}>
-                <Text style={styles.balanceStatLabel}>Income</Text>
+                <Text style={styles.balanceStatLabel}>Total Meal</Text>
                 <Text style={[styles.balanceStatAmount, { color: COLORS.income }]}>
-                    +${parseFloat(summary.income.toString()).toFixed(2)}
+                    {(summary["Total Meal"].toString())}
                 </Text>
             </View>
 
             <View style={[styles.balanceStatItem, styles.statDivider]} />
 
             <View style={styles.balanceStatItem}>
-            <Text style={styles.balanceStatLabel}>Expenses</Text>
+            <Text style={styles.balanceStatLabel}>Total expenses</Text>
             <Text style={[styles.balanceStatAmount, { color: COLORS.expense }]}>
-                -${Math.abs(parseFloat(summary.expenses.toString())).toFixed(2)}
+                -${Math.abs(parseFloat(summary["Total expenses"].toString())).toFixed(2)}
             </Text>
             </View>
       </View>
