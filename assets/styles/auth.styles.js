@@ -7,6 +7,7 @@ export const authStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 20,
+    justifyContent: "center",
   },
   scrollContent: {
     paddingBottom: 40,
@@ -19,6 +20,12 @@ export const authStyles = StyleSheet.create({
   header: {
     marginBottom: 32,
     marginTop: 16,
+    alignItems: "center",
+  },
+  image: {
+    height: 310,
+    width: 300,
+    contentFit: "contain",
   },
   title: {
     fontSize: 28,
@@ -30,6 +37,7 @@ export const authStyles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textLight,
     lineHeight: 20,
+    textAlign: "center",
   },
 
   // Form Fields

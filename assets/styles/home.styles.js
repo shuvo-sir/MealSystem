@@ -274,7 +274,7 @@ export const styles = StyleSheet.create({
     lineHeight: 20,
   },
   notesListContainer: {
-    marginBottom: 35,
+    marginBottom: 75,
   },
   notesListTitle: {
     fontSize: 16,

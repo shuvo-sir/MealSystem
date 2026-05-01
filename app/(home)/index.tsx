@@ -6,6 +6,7 @@ import { BalanceCard } from "@/components/BalanceCard";
 import { useUser } from "@clerk/expo";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS } from "@/constants/colors";
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -37,6 +38,8 @@ export default function HomeScreen() {
     }
   };
 
+
+  // Format date to show "Today", "Yesterday", or specific date
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const today = new Date();
@@ -52,6 +55,8 @@ export default function HomeScreen() {
     }
   };
 
+
+  // Format time to show in "hh:mm AM/PM" format
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -77,6 +82,8 @@ export default function HomeScreen() {
         timestamp,
       };
 
+
+      // Add new note to the top of the list and save to AsyncStorage
       const updatedNotes = [newNote, ...notesList];
       setNotesList(updatedNotes);
       await AsyncStorage.setItem("mealNotesList", JSON.stringify(updatedNotes));
@@ -88,6 +95,7 @@ export default function HomeScreen() {
     }
   };
 
+  // Delete note with confirmation
   const handleDeleteNote = async (noteId: string) => {
     Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
       { text: "Cancel", onPress: () => {}, style: "cancel" },
@@ -98,7 +106,7 @@ export default function HomeScreen() {
             const updatedNotes = notesList.filter((note) => note.id !== noteId);
             setNotesList(updatedNotes);
             await AsyncStorage.setItem("mealNotesList", JSON.stringify(updatedNotes));
-            Alert.alert("Success", "Note deleted successfully!");
+            // Alert.alert("Success", "Note deleted successfully!");
           } catch (error) {
             console.error("Error deleting note:", error);
             Alert.alert("Error", "Failed to delete note.");
@@ -109,6 +117,7 @@ export default function HomeScreen() {
     ]);
   };
 
+  // Handle meal selection/deselection
   const handleMealSelect = (mealId: number, mealName: string) => {
     setSelectedMeals((prevSelected) => {
       if (prevSelected.includes(mealId)) {
@@ -119,6 +128,8 @@ export default function HomeScreen() {
     });
   };
 
+
+  // Get names of selected meals for display
   const getSelectedMealNames = () => {
     return meals
       .filter((meal) => selectedMeals.includes(meal.id))
@@ -204,8 +215,8 @@ export default function HomeScreen() {
           <View style={styles.noteInputContainer}>
             <TextInput
               style={styles.noteInput}
-              placeholder="e.g., No onions, extra spicy, vegetarian, allergies..."
-              placeholderTextColor="#999"
+              placeholder="e.g. Need Eggs, Onions 🧅🍳"
+              placeholderTextColor={COLORS.textLight}
               multiline={true}
               numberOfLines={4}
               value={mealNotes}

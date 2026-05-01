@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
@@ -21,6 +22,7 @@ import {
   getUserFriendlyError,
 } from "@/utils/validation";
 import { COLORS } from "@/constants/colors";
+import { styles } from "@/assets/styles/home.styles";
 
 type SignInStep = "signin" | "mfa";
 
@@ -368,9 +370,13 @@ export default function SignInScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
-        <View style={authStyles.innerContainer}>
+        <ScrollView 
+          contentContainerStyle={authStyles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={authStyles.innerContainer}>
           <View style={authStyles.header}>
+            <Image source={require("../../assets/images/Ramen-pana.png")} style={authStyles.image} />
             <Text style={authStyles.title}>Welcome Back</Text>
             <Text style={authStyles.subtitle}>
               Sign in to your account to continue
@@ -464,7 +470,7 @@ export default function SignInScreen() {
             </Link>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

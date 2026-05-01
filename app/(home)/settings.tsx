@@ -21,8 +21,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { validatePassword } from "../../utils/validation";
 import { getNotificationPreferences, saveNotificationPreferences, type NotificationPreferences } from "../../utils/storageService";
+import { getSelectedTheme, setSelectedTheme as saveTheme, AVAILABLE_THEMES, type ThemeName } from "../../utils/themeService";
 import { styles } from "../../assets/styles/home.styles";
-import { COLORS } from "@/constants/colors";
+import { COLORS, getThemeByName } from "@/constants/colors";
 
 // FAQ data structure
 const FAQ_ITEMS = [
@@ -72,22 +73,26 @@ export default function SettingsScreen() {
     frequency: 'daily',
   });
   const [avatarImageFailed, setAvatarImageFailed] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<ThemeName>('deepHarvest');
 
   const userName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.username || user?.emailAddresses?.[0]?.emailAddress || 'Unnamed user';
 
 
 
-  // Load notification preferences on component mount
+  // Load notification preferences and theme on component mount
   useEffect(() => {
-    const loadNotificationPrefs = async () => {
+    const loadPreferences = async () => {
       try {
         const prefs = await getNotificationPreferences();
         setNotificationPrefs(prefs);
+        
+        const theme = await getSelectedTheme();
+        setSelectedTheme(theme);
       } catch (error) {
-        console.error('Failed to load notification preferences:', error);
+        console.error('Failed to load preferences:', error);
       }
     };
-    loadNotificationPrefs();
+    loadPreferences();
   }, []);
 
   // Save notification preferences
@@ -306,6 +311,17 @@ export default function SettingsScreen() {
     );
   };
 
+  // Handle theme change
+  const handleThemeChange = async (theme: ThemeName) => {
+    setSelectedTheme(theme);
+    const saved = await saveTheme(theme);
+    if (saved) {
+      Alert.alert("Success", "Theme updated successfully! Please restart the app to see changes.");
+    } else {
+      Alert.alert("Error", "Failed to save theme preference.");
+    }
+  };
+
   const settingsItems = [
     {
       icon: "person-circle",
@@ -352,31 +368,12 @@ export default function SettingsScreen() {
     <SafeAreaView edges={["top"]} style={[styles.container, { paddingHorizontal: 0 }]}>
       <ScrollView>
         <View style={styles.content}>
-          <View>
-            <Text style={{
-              fontSize: 24, 
-              fontWeight: 'bold', 
-              color: COLORS.text,
-              paddingHorizontal: 20,
-              borderBottomWidth: 1,
-              borderBottomColor: COLORS.border,
-              paddingBottom: 16,
-              paddingTop: 10,
-            }}
-              >Settings</Text>
-
-          </View>
 
           <View
             style={[
-              styles.header,
               {
-                flexDirection: "row",
-                paddingHorizontal: 20,
-                paddingVertical: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
-                gap: 5,
+                alignItems: "center",
+                paddingBottom: 25,
               },
             ]}
           >
@@ -402,7 +399,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             )}
-            <View style={styles.welcomeContainer}>
+            <View style={{ alignItems: "center", marginTop: 8 }}>
               <Text style={[styles.usernameText, {color: COLORS.textLight}]}>{userName}</Text>
               <Text
                 style={[
@@ -413,6 +410,24 @@ export default function SettingsScreen() {
                 {user?.emailAddresses?.[0]?.emailAddress}
               </Text>
             </View>
+
+          </View>
+
+          <View  style={{  
+              paddingVertical: 20, gap: 10, 
+              flexDirection: "row",               
+              paddingHorizontal: 20,
+              borderBottomWidth: 1,
+              borderBottomColor: COLORS.border,
+              paddingBottom: 16,
+              paddingTop: 10,}}>
+            <Ionicons name="settings" size={28} color={COLORS.primary} style={{}} />
+            <Text style={{
+              fontSize: 24, 
+              fontWeight: 'bold', 
+              color: COLORS.text,
+            }}
+              >Settings</Text>
 
           </View>
 
@@ -476,7 +491,7 @@ export default function SettingsScreen() {
               style={({ pressed }) => [
                 styles.addButton,
                 {
-                  backgroundColor: COLORS.expense,
+                  backgroundColor: COLORS.primary,
                   marginHorizontal: 0,
                   opacity: pressed ? 0.8 : 1,
                   
@@ -670,6 +685,64 @@ export default function SettingsScreen() {
               <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 4 }}>
                 Email cannot be changed
               </Text>
+            </View>
+
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 12 }}>
+                Theme
+              </Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                style={{ marginHorizontal: -20, paddingHorizontal: 20 }}
+              >
+                {AVAILABLE_THEMES.map((theme) => {
+                  const themeColors = getThemeByName(theme.name);
+                  const isSelected = selectedTheme === theme.name;
+                  
+                  return (
+                    <Pressable
+                      key={theme.name}
+                      onPress={() => handleThemeChange(theme.name)}
+                      style={({ pressed }) => [
+                        {
+                          marginRight: 12,
+                          alignItems: "center",
+                          opacity: pressed ? 0.7 : 1,
+                        }
+                      ]}
+                    >
+                      <View
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 12,
+                          backgroundColor: themeColors.primary,
+                          borderWidth: isSelected ? 3 : 0,
+                          borderColor: isSelected ? COLORS.text : "transparent",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginBottom: 6,
+                        }}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark-circle" size={28} color={COLORS.white} />
+                        )}
+                      </View>
+                      <Text 
+                        style={{ 
+                          fontSize: 11, 
+                          color: COLORS.text,
+                          textAlign: "center",
+                          fontWeight: isSelected ? "600" : "400",
+                        }}
+                      >
+                        {theme.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
           </ScrollView>
 

@@ -347,11 +347,12 @@ export default function SignUpScreen() {
   // Sign-up step UI
   return (
     <SafeAreaView edges={["top"]} style={authStyles.container}>
-      <KeyboardAvoidingView
+      
+        <ScrollView contentContainerStyle={authStyles.scrollContent}>
+          <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
         <View style={authStyles.innerContainer}>
           <View style={authStyles.header}>
             <Text style={authStyles.title}>Create Account</Text>
@@ -524,8 +525,9 @@ export default function SignUpScreen() {
           {/* Clerk Captcha - Required for bot protection */}
           <View nativeID="clerk-captcha" />
         </View>
-      </ScrollView>
+      
       </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
