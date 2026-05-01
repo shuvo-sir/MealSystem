@@ -5,12 +5,13 @@ export const authStyles = StyleSheet.create({
   // Container & Layout
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
     padding: 20,
     justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   scrollContent: {
-    paddingBottom: 40,
+    flexGrow: 1,
   },
   innerContainer: {
     gap: 16,
