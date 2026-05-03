@@ -53,13 +53,13 @@ const oceanTheme = {
 
 
 const midnightTheme = {
-  primary: "#BB86FC",
-  background: "#121212",
-  text: "#E1E1E1",
+  primary: "#000000",
+  background: "#a9e3dc",
+  text: "#060606",
   border: "#333333",
   white: "#FFFFFF",
-  textLight: "#A0A0A0",
-  expense: "#EF5350",
+  textLight: "#5f5a5a",
+  expense: "#912321",
   income: "#03DAC6",
   card: "#1E1E1E",
   shadow: "#000000",
@@ -216,13 +216,13 @@ const THEMES = {
   garden: gardenTheme,
   honey: honeyTheme,
   crispMint: crispMintTheme,
-  deepHarvest: deepHarvestTheme,
+  deepHarvest: deepHarvestTheme, // selected theme
   spicedCacao: spicedCacaoTheme,
   midnightBerry: midnightBerryTheme,
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.deepHarvest;
+export const COLORS = THEMES.midnight;
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {

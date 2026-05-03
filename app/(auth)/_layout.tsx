@@ -26,5 +26,14 @@ export default function AuthRoutesLayout() {
     return <Redirect href="/(home)" />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+  <Stack
+    screenOptions={{
+      headerShown: false,
+      contentStyle: {
+        backgroundColor: COLORS.background,
+      },
+    }}
+  />
+);
 }

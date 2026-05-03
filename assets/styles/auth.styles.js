@@ -1,65 +1,107 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 import { COLORS } from "../../constants/colors";
+
+const { width } = Dimensions.get("window");
 
 export const authStyles = StyleSheet.create({
   // Container & Layout
   container: {
     flex: 1,
-    padding: 20,
     justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    padding: 20,
+    backgroundColor: COLORS.background
   },
   scrollContent: {
     flexGrow: 1,
   },
   innerContainer: {
-    gap: 16,
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 24,
+    borderLeftColor: COLORS.primary,
+    borderWidth: 1,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 4,
+    borderColor: COLORS.primary,
+    borderLeftWidth: 6,
+    gap: 12,
   },
 
   // Header
   header: {
-    marginBottom: 32,
-    marginTop: 16,
     alignItems: "center",
+    marginBottom: 25,
   },
+  topImage: {
+    alignItems: "center",
+    width: "100%",
+  },
+
   image: {
-    height: 310,
-    width: 300,
-    contentFit: "contain",
+    width: width * 0.65,
+    height: width * 0.65,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.text,
+    fontSize: 32,
+    fontFamily: "JetBrainsMono-Medium",
+    fontWeight: 700,
+    color: COLORS.primary,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    lineHeight: 20,
-    textAlign: "center",
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: "center"
   },
 
   // Form Fields
   fieldContainer: {
-    gap: 6,
+    marginBottom: 16
+  },
+  
+  inputGroup: {
+    marginBottom: 20
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: 500,
     color: COLORS.text,
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    borderWidth: 1,
+    alignItems: "center",
+    paddingHorizontal: 12,
+    borderColor: COLORS.border,
+    borderRadius: 16,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    // borderWidth: 1,
+    // borderColor: COLORS.border,
+    // borderRadius: 12,
+    // paddingHorizontal: 16,
+    // paddingVertical: 12,
+    // fontSize: 16,
+    // color: COLORS.text,
+    // backgroundColor: COLORS.white,
+    // fontFamily: "System",
+    flex: 1,
+    height: 48,
+    fontSize: 14,
     color: COLORS.text,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     fontFamily: "System",
+  },
+    inputIcon: {
+    marginRight: 2,
+    color: COLORS.textLight,
+  },
+  eyeIcon: {
+    padding: 8,
   },
   inputFocused: {
     borderColor: COLORS.primary,
@@ -109,6 +151,7 @@ export const authStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginTop: 12,
   },
   buttonPrimary: {
     backgroundColor: COLORS.primary,

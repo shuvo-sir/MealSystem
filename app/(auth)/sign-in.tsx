@@ -21,7 +21,9 @@ import {
   getUserFriendlyError,
 } from "@/utils/validation";
 import { COLORS } from "@/constants/colors";
-import { styles } from "@/assets/styles/home.styles";
+import { Ionicons } from "@expo/vector-icons";
+
+
 
 type SignInStep = "signin" | "mfa";
 
@@ -228,16 +230,20 @@ export default function SignInScreen() {
   const isLoading = fetchStatus === "fetching";
   const isMFAStep = step === "mfa";
 
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: COLORS.background }}
     >
-      <ScrollView
-        contentContainerStyle={authStyles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+
         <View style={authStyles.container}>
+            <View style={authStyles.topImage}>
+                  <Image
+                    source={require("../../assets/images/Ramen-pana.png")}
+                    style={authStyles.image}
+                  />
+                </View>
           <View style={authStyles.innerContainer}>
             {isMFAStep ? (
               /* MFA UI */
@@ -327,13 +333,11 @@ export default function SignInScreen() {
                 </Pressable>
               </>
             ) : (
+
               /* Sign-in UI */
               <>
+              
                 <View style={authStyles.header}>
-                  <Image
-                    source={require("../../assets/images/Ramen-pana.png")}
-                    style={authStyles.image}
-                  />
                   <Text style={authStyles.title}>Welcome Back</Text>
                   <Text style={authStyles.subtitle}>
                     Sign in to your account to continue
@@ -347,12 +351,24 @@ export default function SignInScreen() {
                 )}
 
                 <View style={authStyles.fieldContainer}>
-                  <Text style={authStyles.label}>Email Address</Text>
+
+                  {/* Email */}
+                  <View style={authStyles.inputGroup}>
+                    {/* <Text style={authStyles.label}>Email</Text> */}
+                    <View style={[
+                      authStyles.inputContainer,
+                      focusedField === "email" && authStyles.inputFocused,
+                      emailError && authStyles.inputError,
+                    ]}
+                    >
+                  <Ionicons style={authStyles.inputIcon}
+                  name='mail-outline'
+                  size={20}
+                  color={COLORS.textLight}/>
                   <TextInput
                     style={[
                       authStyles.input,
-                      focusedField === "email" && authStyles.inputFocused,
-                      emailError && authStyles.inputError,
+                      
                     ]}
                     placeholder="your@email.com"
                     placeholderTextColor={COLORS.textLight}
@@ -366,15 +382,25 @@ export default function SignInScreen() {
                     editable={!isLoading}
                   />
                   {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
-                </View>
+                  </View>
+                  </View>
 
-                <View style={authStyles.fieldContainer}>
-                  <Text style={authStyles.label}>Password</Text>
+                    {/* Password */}
+                    <View style={authStyles.inputGroup}>
+                      {/* <Text style={authStyles.label}>Password</Text> */}
+                    <View style={[
+                      authStyles.inputContainer,
+                      focusedField === "password" && authStyles.inputFocused,
+                      passwordError && authStyles.inputError,
+                    ]}
+                    >
+                  <Ionicons style={authStyles.inputIcon}
+                  name='lock-closed-outline'
+                  size={20}
+                  color={COLORS.textLight}/>                  
                   <TextInput
                     style={[
                       authStyles.input,
-                      focusedField === "password" && authStyles.inputFocused,
-                      passwordError && authStyles.inputError,
                     ]}
                     placeholder="Enter your password"
                     placeholderTextColor={COLORS.textLight}
@@ -386,8 +412,8 @@ export default function SignInScreen() {
                     editable={!isLoading}
                   />
                   {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
-                </View>
-
+                  </View>
+                  </View>
                 <Pressable
                   style={[
                     authStyles.button,
@@ -421,11 +447,11 @@ export default function SignInScreen() {
                     <Text style={authStyles.linkAction}>Sign Up</Text>
                   </Link>
                 </View>
+                </View>
               </>
             )}
           </View>
         </View>
-      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
