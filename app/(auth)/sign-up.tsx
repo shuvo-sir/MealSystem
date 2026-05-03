@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
   Linking,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
@@ -23,6 +24,7 @@ import {
   getPasswordStrength,
 } from "@/utils/validation";
 import { COLORS } from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -248,12 +250,10 @@ export default function SignUpScreen() {
   // Verification step UI
   if (isVerificationStep) {
     return (
-      <SafeAreaView edges={["top"]} style={authStyles.container}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView contentContainerStyle={authStyles.scrollContent}>
+          style={{ flex: 1, backgroundColor: COLORS.background }}        >
+          <View style={authStyles.container}>
             <View style={authStyles.innerContainer}>
             <View style={authStyles.header}>
               <Text style={authStyles.title}>Verify Your Email</Text>
@@ -270,12 +270,22 @@ export default function SignUpScreen() {
             )}
 
             <View style={authStyles.fieldContainer}>
-              <Text style={authStyles.label}>Verification Code</Text>
+              <View style={authStyles.inputGroup}>
+                <Text style={authStyles.label}>Verification Code</Text>
+                <View style={[
+                  authStyles.inputContainer,
+                  focusedField === "code" && authStyles.inputFocused,
+                  codeError && authStyles.inputError,
+                  ]}
+                >
+                  <Ionicons style={authStyles.inputIcon}
+                    name='mail-outline'
+                    size={20}
+                    color={COLORS.textLight}
+                  />
               <TextInput
                 style={[
                   authStyles.input,
-                  focusedField === "code" && authStyles.inputFocused,
-                  codeError && authStyles.inputError,
                 ]}
                 placeholder="Enter 6-digit code"
                 placeholderTextColor={COLORS.textLight}
@@ -288,6 +298,7 @@ export default function SignUpScreen() {
                 editable={!isLoading}
               />
               {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
+            </View>
             </View>
 
             <Pressable
@@ -338,20 +349,28 @@ export default function SignUpScreen() {
               </Pressable>
             </View>
           </View>
-        </ScrollView>
+          </View>
+        </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
     );
   }
 
   // Sign-up step UI
   return (
-    <SafeAreaView edges={["top"]} style={authStyles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
+        style={{ flex: 1, backgroundColor: COLORS.background }}      
+        >
+      {/* <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      > */}
+
+        <View style={authStyles.container}>
+        <View style={authStyles.topImage}>
+          <Image source={require("@/assets/images/Recipe book-pana.png")} style={[authStyles.image, {marginBottom: -19}]} resizeMode="contain" />
+        </View>
         <View style={authStyles.innerContainer}>
           <View style={authStyles.header}>
             <Text style={authStyles.title}>Create Account</Text>
@@ -368,55 +387,84 @@ export default function SignUpScreen() {
 
           {/* Full Name Field */}
           <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Full Name</Text>
-            <TextInput
-              style={[
-                authStyles.input,
+            <View style={authStyles.inputGroup}>
+              {/* <Text style={authStyles.label}>Username</Text> */}
+              <View style={[
+                authStyles.inputContainer,
                 focusedField === "fullName" && authStyles.inputFocused,
                 fullNameError && authStyles.inputError,
-              ]}
-              placeholder="John Doe"
-              placeholderTextColor={COLORS.textLight}
-              value={fullName}
-              onChangeText={handleFullNameChange}
-              onFocus={() => setFocusedField("fullName")}
-              onBlur={() => setFocusedField(null)}
-              editable={!isLoading}
-            />
-            {fullNameError && <Text style={authStyles.errorText}>{fullNameError}</Text>}
+                ]}
+              >
+                <Ionicons style={authStyles.inputIcon}
+                name='person-outline'
+                size={20}
+                color={COLORS.textLight}/>
+                <TextInput
+                  style={[
+                    authStyles.input,
+                  ]}
+                  placeholder="Enter your username"
+                  placeholderTextColor={COLORS.textLight}
+                  value={fullName}
+                  onChangeText={handleFullNameChange}
+                  onFocus={() => setFocusedField("fullName")}
+                  onBlur={() => setFocusedField(null)}
+                  editable={!isLoading}
+                />
+                {fullNameError && <Text style={authStyles.errorText}>{fullNameError}</Text>}
+              </View>
           </View>
 
           {/* Email Field */}
           <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Email Address</Text>
-            <TextInput
-              style={[
-                authStyles.input,
-                focusedField === "email" && authStyles.inputFocused,
-                emailError && authStyles.inputError,
-              ]}
-              placeholder="your@email.com"
-              placeholderTextColor={COLORS.textLight}
-              value={emailAddress}
-              onChangeText={handleEmailChange}
-              onFocus={() => setFocusedField("email")}
-              onBlur={() => setFocusedField(null)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!isLoading}
-            />
-            {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
+            <View style={authStyles.inputGroup}>
+              {/* <Text style={authStyles.label}>Email</Text> */}
+                <View style={[
+                    authStyles.inputContainer,
+                    focusedField === "email" && authStyles.inputFocused,
+                    emailError && authStyles.inputError,
+                    ]}
+                  >
+                  <Ionicons style={authStyles.inputIcon}
+                  name='mail-outline'
+                  size={20}
+                  color={COLORS.textLight}/>
+                  <TextInput
+                    style={[
+                      authStyles.input,
+                      
+                    ]}
+                    placeholder="your@email.com"
+                    placeholderTextColor={COLORS.textLight}
+                    value={emailAddress}
+                    onChangeText={handleEmailChange}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isLoading}
+                  />
+                {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
+              </View>
           </View>
 
           {/* Password Field */}
-          <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Password</Text>
+          <View style={authStyles.inputGroup}>
+            {/* <Text style={authStyles.label}>Password</Text> */}
+            <View style={[
+              authStyles.inputContainer,
+              focusedField === "password" && authStyles.inputFocused,
+              passwordError && authStyles.inputError,
+            ]}
+          >
+            <Ionicons style={authStyles.inputIcon}
+            name='lock-closed-outline'
+            size={20}
+            color={COLORS.textLight}/>                  
             <TextInput
               style={[
                 authStyles.input,
-                focusedField === "password" && authStyles.inputFocused,
-                passwordError && authStyles.inputError,
               ]}
               placeholder="Create a strong password"
               placeholderTextColor={COLORS.textLight}
@@ -428,7 +476,8 @@ export default function SignUpScreen() {
               editable={!isLoading}
             />
             {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
-
+            </View>
+            </View>
             {/* Password Strength Indicator */}
             {password && (
               <View style={authStyles.strengthContainer}>
@@ -456,7 +505,7 @@ export default function SignUpScreen() {
                 </Text>
               </View>
             )}
-          </View>
+
 
           {/* Terms & Conditions Checkbox */}
           <Pressable
@@ -524,8 +573,11 @@ export default function SignUpScreen() {
           {/* Clerk Captcha - Required for bot protection */}
           <View nativeID="clerk-captcha" />
         </View>
-      </ScrollView>
+        </View>
+        </View>
+        </View>
+      {/* </ScrollView> */}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    
   );
 }

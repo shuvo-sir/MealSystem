@@ -8,8 +8,8 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useSignIn, useAuth } from "@clerk/expo";
 import { authStyles } from "@/assets/styles/auth.styles";
@@ -21,6 +21,9 @@ import {
   getUserFriendlyError,
 } from "@/utils/validation";
 import { COLORS } from "@/constants/colors";
+import { Ionicons } from "@expo/vector-icons";
+
+
 
 type SignInStep = "signin" | "mfa";
 
@@ -126,19 +129,13 @@ export default function SignInScreen() {
 
       // Check sign-in status
       if (signIn.status === "complete") {
-        // Sign-in successful, navigate to home
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
-            if (session?.currentTask) {
-              console.log("Session task:", session.currentTask);
-            }
-
             const url = decorateUrl("/(home)");
             router.replace(url as any);
           },
         });
-      } else if (signIn.status === "needs_client_trust") {
-        // MFA required - send email code
+      } else if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
         const emailCodeFactor = signIn.supportedSecondFactors.find(
           (factor) => factor.strategy === "email_code"
         );
@@ -160,30 +157,6 @@ export default function SignInScreen() {
           }, 1000);
         } else {
           setGeneralError("MFA is required but email verification is not available.");
-        }
-      } else if (signIn.status === "needs_second_factor") {
-        // Alternative MFA handling
-        setMfaEmail(normalizeEmail(emailAddress));
-        setStep("mfa");
-        
-        // Try to send email code
-        const emailCodeFactor = signIn.supportedSecondFactors.find(
-          (factor) => factor.strategy === "email_code"
-        );
-
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
-          setResendCountdown(60);
-
-          const interval = setInterval(() => {
-            setResendCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(interval);
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
         }
       } else {
         setGeneralError("Sign-in failed. Please check your credentials and try again.");
@@ -209,10 +182,6 @@ export default function SignInScreen() {
       if (signIn.status === "complete") {
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
-            if (session?.currentTask) {
-              console.log("Session task:", session.currentTask);
-            }
-
             const url = decorateUrl("/(home)");
             router.replace(url as any);
           },
@@ -261,211 +230,228 @@ export default function SignInScreen() {
   const isLoading = fetchStatus === "fetching";
   const isMFAStep = step === "mfa";
 
-  // MFA Verification Step UI
-  if (isMFAStep) {
-    return (
-      <SafeAreaView edges={["top"]} style={authStyles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView contentContainerStyle={authStyles.scrollContent}>
-            <View style={authStyles.innerContainer}>
-            <View style={authStyles.header}>
-              <Text style={authStyles.title}>Verify Your Identity</Text>
-              <Text style={authStyles.subtitle}>
-                Enter the verification code we sent to{"\n"}
-                <Text style={{ fontWeight: "600" }}>{mfaEmail}</Text>
-              </Text>
-            </View>
 
-            {generalError && (
-              <View style={authStyles.generalError}>
-                <Text style={authStyles.generalErrorText}>{generalError}</Text>
-              </View>
-            )}
-
-            <View style={authStyles.fieldContainer}>
-              <Text style={authStyles.label}>Verification Code</Text>
-              <TextInput
-                style={[
-                  authStyles.input,
-                  focusedField === "code" && authStyles.inputFocused,
-                  codeError && authStyles.inputError,
-                ]}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor={COLORS.textLight}
-                value={code}
-                onChangeText={handleCodeChange}
-                onFocus={() => setFocusedField("code")}
-                onBlur={() => setFocusedField(null)}
-                keyboardType="number-pad"
-                maxLength={8}
-                editable={!isLoading}
-              />
-              {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
-            </View>
-
-            <Pressable
-              style={[
-                authStyles.button,
-                authStyles.buttonPrimary,
-                isLoading && authStyles.buttonDisabled,
-              ]}
-              onPress={handleMFAVerify}
-              disabled={isLoading || !code.trim()}
-            >
-              {isLoading ? (
-                <View style={authStyles.loadingContainer}>
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                  <Text style={authStyles.buttonPrimaryText}>Verifying...</Text>
-                </View>
-              ) : (
-                <Text style={authStyles.buttonPrimaryText}>Verify Code</Text>
-              )}
-            </Pressable>
-
-            <View style={authStyles.resendContainer}>
-              <Text style={authStyles.resendText}>Didn't receive the code?</Text>
-              {resendCountdown > 0 ? (
-                <Text style={authStyles.timerText}>
-                  Resend code in {resendCountdown}s
-                </Text>
-              ) : (
-                <Pressable onPress={handleResendCode} disabled={isLoading}>
-                  <Text
-                    style={[
-                      authStyles.linkAction,
-                      isLoading && { opacity: 0.5 },
-                    ]}
-                  >
-                    Resend Code
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
-            <View style={authStyles.divider} />
-
-            <Pressable
-              style={[authStyles.button, authStyles.buttonSecondary]}
-              onPress={handleStartOver}
-              disabled={isLoading}
-            >
-              <Text style={authStyles.buttonSecondaryText}>Start Over</Text>
-            </Pressable>
-          </View>
-        </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    );
-  }
-
-  // Sign-in Step UI
   return (
-    <SafeAreaView edges={["top"]} style={authStyles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={authStyles.scrollContent}>
-        <View style={authStyles.innerContainer}>
-          <View style={authStyles.header}>
-            <Text style={authStyles.title}>Welcome Back</Text>
-            <Text style={authStyles.subtitle}>
-              Sign in to your account to continue
-            </Text>
-          </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1, backgroundColor: COLORS.background }}
+    >
 
-          {generalError && (
-            <View style={authStyles.generalError}>
-              <Text style={authStyles.generalErrorText}>{generalError}</Text>
-            </View>
-          )}
+        <View style={authStyles.container}>
+            <View style={authStyles.topImage}>
+                  <Image
+                    source={require("../../assets/images/Ramen-pana.png")}
+                    style={authStyles.image}
+                  />
+                </View>
+          <View style={authStyles.innerContainer}>
+            {isMFAStep ? (
+              /* MFA UI */
+              <>
+                <View style={authStyles.header}>
+                  <Text style={authStyles.title}>Verify Your Identity</Text>
+                  <Text style={authStyles.subtitle}>
+                    Enter the verification code we sent to{"\n"}
+                    <Text style={{ fontWeight: "600" }}>{mfaEmail}</Text>
+                  </Text>
+                </View>
 
-          {/* Email Field */}
-          <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Email Address</Text>
-            <TextInput
-              style={[
-                authStyles.input,
-                focusedField === "email" && authStyles.inputFocused,
-                emailError && authStyles.inputError,
-              ]}
-              placeholder="your@email.com"
-              placeholderTextColor={COLORS.textLight}
-              value={emailAddress}
-              onChangeText={handleEmailChange}
-              onFocus={() => setFocusedField("email")}
-              onBlur={() => setFocusedField(null)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!isLoading}
-            />
-            {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
-          </View>
+                {generalError && (
+                  <View style={authStyles.generalError}>
+                    <Text style={authStyles.generalErrorText}>{generalError}</Text>
+                  </View>
+                )}
 
-          {/* Password Field */}
-          <View style={authStyles.fieldContainer}>
-            <Text style={authStyles.label}>Password</Text>
-            <TextInput
-              style={[
-                authStyles.input,
-                focusedField === "password" && authStyles.inputFocused,
-                passwordError && authStyles.inputError,
-              ]}
-              placeholder="Enter your password"
-              placeholderTextColor={COLORS.textLight}
-              value={password}
-              onChangeText={handlePasswordChange}
-              onFocus={() => setFocusedField("password")}
-              onBlur={() => setFocusedField(null)}
-              secureTextEntry
-              editable={!isLoading}
-            />
-            {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
-          </View>
+                <View style={authStyles.fieldContainer}>
+                  <Text style={authStyles.label}>Verification Code</Text>
+                  <TextInput
+                    style={[
+                      authStyles.input,
+                      focusedField === "code" && authStyles.inputFocused,
+                      codeError && authStyles.inputError,
+                    ]}
+                    placeholder="Enter 6-digit code"
+                    placeholderTextColor={COLORS.textLight}
+                    value={code}
+                    onChangeText={handleCodeChange}
+                    onFocus={() => setFocusedField("code")}
+                    onBlur={() => setFocusedField(null)}
+                    keyboardType="number-pad"
+                    maxLength={8}
+                    editable={!isLoading}
+                  />
+                  {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
+                </View>
 
-          {/* Sign-in Button */}
-          <Pressable
-            style={[
-              authStyles.button,
-              authStyles.buttonPrimary,
-              isLoading && authStyles.buttonDisabled,
-            ]}
-            onPress={handleSignInSubmit}
-            disabled={isLoading || !emailAddress.trim() || !password.trim()}
-          >
-            {isLoading ? (
-              <View style={authStyles.loadingContainer}>
-                <ActivityIndicator size="small" color={COLORS.white} />
-                <Text style={authStyles.buttonPrimaryText}>Signing In...</Text>
-              </View>
+                <Pressable
+                  style={[
+                    authStyles.button,
+                    authStyles.buttonPrimary,
+                    isLoading && authStyles.buttonDisabled,
+                  ]}
+                  onPress={handleMFAVerify}
+                  disabled={isLoading || !code.trim()}
+                >
+                  {isLoading ? (
+                    <View style={authStyles.loadingContainer}>
+                      <ActivityIndicator size="small" color={COLORS.white} />
+                      <Text style={authStyles.buttonPrimaryText}>Verifying...</Text>
+                    </View>
+                  ) : (
+                    <Text style={authStyles.buttonPrimaryText}>Verify Code</Text>
+                  )}
+                </Pressable>
+
+                <View style={authStyles.resendContainer}>
+                  <Text style={authStyles.resendText}>Didn't receive the code?</Text>
+                  {resendCountdown > 0 ? (
+                    <Text style={authStyles.timerText}>
+                      Resend code in {resendCountdown}s
+                    </Text>
+                  ) : (
+                    <Pressable onPress={handleResendCode} disabled={isLoading}>
+                      <Text
+                        style={[
+                          authStyles.linkAction,
+                          isLoading && { opacity: 0.5 },
+                        ]}
+                      >
+                        Resend Code
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+
+                <View style={authStyles.divider} />
+
+                <Pressable
+                  style={[authStyles.button, authStyles.buttonSecondary]}
+                  onPress={handleStartOver}
+                  disabled={isLoading}
+                >
+                  <Text style={authStyles.buttonSecondaryText}>Start Over</Text>
+                </Pressable>
+              </>
             ) : (
-              <Text style={authStyles.buttonPrimaryText}>Sign In</Text>
+
+              /* Sign-in UI */
+              <>
+              
+                <View style={authStyles.header}>
+                  <Text style={authStyles.title}>Welcome Back</Text>
+                  <Text style={authStyles.subtitle}>
+                    Sign in to your account to continue
+                  </Text>
+                </View>
+
+                {generalError && (
+                  <View style={authStyles.generalError}>
+                    <Text style={authStyles.generalErrorText}>{generalError}</Text>
+                  </View>
+                )}
+
+                <View style={authStyles.fieldContainer}>
+
+                  {/* Email */}
+                  <View style={authStyles.inputGroup}>
+                    {/* <Text style={authStyles.label}>Email</Text> */}
+                    <View style={[
+                      authStyles.inputContainer,
+                      focusedField === "email" && authStyles.inputFocused,
+                      emailError && authStyles.inputError,
+                    ]}
+                    >
+                  <Ionicons style={authStyles.inputIcon}
+                  name='mail-outline'
+                  size={20}
+                  color={COLORS.textLight}/>
+                  <TextInput
+                    style={[
+                      authStyles.input,
+                      
+                    ]}
+                    placeholder="your@email.com"
+                    placeholderTextColor={COLORS.textLight}
+                    value={emailAddress}
+                    onChangeText={handleEmailChange}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isLoading}
+                  />
+                  {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
+                  </View>
+                  </View>
+
+                    {/* Password */}
+                    <View style={authStyles.inputGroup}>
+                      {/* <Text style={authStyles.label}>Password</Text> */}
+                    <View style={[
+                      authStyles.inputContainer,
+                      focusedField === "password" && authStyles.inputFocused,
+                      passwordError && authStyles.inputError,
+                    ]}
+                    >
+                  <Ionicons style={authStyles.inputIcon}
+                  name='lock-closed-outline'
+                  size={20}
+                  color={COLORS.textLight}/>                  
+                  <TextInput
+                    style={[
+                      authStyles.input,
+                    ]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={COLORS.textLight}
+                    value={password}
+                    onChangeText={handlePasswordChange}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField(null)}
+                    secureTextEntry
+                    editable={!isLoading}
+                  />
+                  {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
+                  </View>
+                  </View>
+                <Pressable
+                  style={[
+                    authStyles.button,
+                    authStyles.buttonPrimary,
+                    isLoading && authStyles.buttonDisabled,
+                  ]}
+                  onPress={handleSignInSubmit}
+                  disabled={isLoading || !emailAddress.trim() || !password.trim()}
+                >
+                  {isLoading ? (
+                    <View style={authStyles.loadingContainer}>
+                      <ActivityIndicator size="small" color={COLORS.white} />
+                      <Text style={authStyles.buttonPrimaryText}>Signing In...</Text>
+                    </View>
+                  ) : (
+                    <Text style={authStyles.buttonPrimaryText}>Sign In</Text>
+                  )}
+                </Pressable>
+
+                <View style={authStyles.linkContainer}>
+                  <Pressable>
+                    <Text style={authStyles.linkAction}>Forgot password?</Text>
+                  </Pressable>
+                </View>
+
+                <View style={authStyles.divider} />
+
+                <View style={authStyles.linkContainer}>
+                  <Text style={authStyles.linkText}>Don't have an account? </Text>
+                  <Link href="/(auth)/sign-up">
+                    <Text style={authStyles.linkAction}>Sign Up</Text>
+                  </Link>
+                </View>
+                </View>
+              </>
             )}
-          </Pressable>
-
-          {/* Forgot Password Link */}
-          <View style={authStyles.linkContainer}>
-            <Pressable>
-              <Text style={authStyles.linkAction}>Forgot password?</Text>
-            </Pressable>
-          </View>
-
-          <View style={authStyles.divider} />
-
-          {/* Sign-up Link */}
-          <View style={authStyles.linkContainer}>
-            <Text style={authStyles.linkText}>Don't have an account? </Text>
-            <Link href="/(auth)/sign-up">
-              <Text style={authStyles.linkAction}>Sign Up</Text>
-            </Link>
           </View>
         </View>
-      </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
