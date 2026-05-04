@@ -4,7 +4,7 @@ import { COLORS } from "../constants/colors";
 
 type Summary = {
   balance: number | string;
-  "Total Meal": number | string;
+  " Meal Rate": number | string;
   "Total expenses": number | string;
 };
 
@@ -15,16 +15,17 @@ type BalanceCardProps = {
 export const BalanceCard = ({ summary }: BalanceCardProps) => {
   return (
     <View style={styles.balanceCard}>
+      <View style={styles.balanceCardInnerBorder}>
       <Text style={styles.balanceTitle}>Total Balance</Text>
       <Text style={styles.balanceAmount}>
-        ${parseFloat(summary.balance.toString()).toFixed(2)}
+        ৳{parseFloat(summary.balance.toString()).toFixed(2)}
       </Text>
 
       <View style={styles.balanceStats}>
             <View style={styles.balanceStatItem}>
-                <Text style={styles.balanceStatLabel}>Total Meal</Text>
+                <Text style={styles.balanceStatLabel}>Meal Rate</Text>
                 <Text style={[styles.balanceStatAmount, { color: COLORS.income }]}>
-                    {(summary["Total Meal"].toString())}
+                    +৳{Math.abs(parseFloat(summary[" Meal Rate"].toString())).toFixed(2)}
                 </Text>
             </View>
 
@@ -33,10 +34,11 @@ export const BalanceCard = ({ summary }: BalanceCardProps) => {
             <View style={styles.balanceStatItem}>
             <Text style={styles.balanceStatLabel}>Total expenses</Text>
             <Text style={[styles.balanceStatAmount, { color: COLORS.expense }]}>
-                -${Math.abs(parseFloat(summary["Total expenses"].toString())).toFixed(2)}
+                -৳{Math.abs(parseFloat(summary["Total expenses"].toString())).toFixed(2)}
             </Text>
             </View>
       </View>
+    </View>
     </View>
   );
 };

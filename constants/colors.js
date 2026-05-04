@@ -55,13 +55,13 @@ const oceanTheme = {
 const midnightTheme = {
   primary: "#000000",
   background: "#a9e3dc",
-  text: "#060606",
+  text: "#212121",
   border: "#333333",
   white: "#FFFFFF",
   textLight: "#5f5a5a",
   expense: "#912321",
   income: "#03DAC6",
-  card: "#1E1E1E",
+  card: "#ffffff",
   shadow: "#000000",
 };
 
@@ -222,7 +222,7 @@ const THEMES = {
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.midnight;
+export const COLORS = THEMES.midnightBerry;
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {

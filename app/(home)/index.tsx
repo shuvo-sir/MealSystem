@@ -176,7 +176,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Balance Card Section */}
-          <BalanceCard summary={{ balance: 1000, "Total Meal": 2000, "Total expenses": 1000 }} />
+          <BalanceCard summary={{ balance: 1000, " Meal Rate": 75, "Total expenses": 1000 }} />
 
           {/* Meal Selection Section */}
           <Text style={styles.mealSectionTitle}>Add Your Meal</Text>
