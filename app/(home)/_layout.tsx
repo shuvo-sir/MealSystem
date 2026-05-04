@@ -32,14 +32,14 @@ export default function HomeRoutesLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: "white",
+        tabBarInactiveTintColor: COLORS.border,
         tabBarStyle: {
           position: "absolute",
           height: 60,
           marginBottom: 35,
           marginHorizontal: 20,
           borderRadius: 25,
-          backgroundColor: "black",
+          backgroundColor: COLORS.card,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 5 },
           shadowOpacity: 0.1,

@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
     balanceCard: {
         backgroundColor: COLORS.card,
         borderRadius: 20,
-        padding: 20,
+        padding: 12,
         marginBottom: 20,
         shadowColor: COLORS.shadow,
         shadowOffset: {
@@ -80,6 +80,12 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
+    },
+    balanceCardInnerBorder: {
+      borderRadius: 20,
+      padding: 15,
+      borderWidth: 2,
+      borderColor: COLORS.border,
     },
     balanceTitle: {
         fontSize: 16,
@@ -198,7 +204,7 @@ export const styles = StyleSheet.create({
     elevation: 3,
   },
   noteInput: {
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     fontSize: 14,
