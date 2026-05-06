@@ -55,7 +55,7 @@ const oceanTheme = {
 const midnightTheme = {
   primary: "#000000",
   background: "#a9e3dc",
-  text: "#212121",
+  text: "#242222",
   border: "#333333",
   white: "#FFFFFF",
   textLight: "#5f5a5a",
@@ -163,7 +163,7 @@ const crispMintTheme = {
 
 const deepHarvestTheme = {
   primary: "#1B4332",     // Rich Forest Green
-  background: "#FFFFFF",  // Pure White for maximum "crisp"
+  background: "#e6fff4",  // Pure White for maximum "crisp"
   text: "#081C15",        // Near Black Green
   border: "#D8F3DC",      // Very light mint border
   white: "#FFFFFF",
@@ -222,7 +222,7 @@ const THEMES = {
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.midnightBerry;
+export const COLORS = THEMES.deepHarvest;
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {
