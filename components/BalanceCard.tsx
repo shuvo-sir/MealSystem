@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { styles } from "../assets/styles/home.styles";
 import { COLORS } from "../constants/colors";
 
@@ -14,9 +14,10 @@ type BalanceCardProps = {
 
 export const BalanceCard = ({ summary }: BalanceCardProps) => {
 
+
   const handleDeposits = () => {
-    alert("Navigate to Deposits Screen");
-  }
+    Alert.alert("Deposits", "Navigate to Deposits Screen");
+  };
 
 
 
