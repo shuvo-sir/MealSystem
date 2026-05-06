@@ -53,7 +53,7 @@ export const BalanceCard = ({ summary }: BalanceCardProps) => {
           style={styles.noteSaveButton}
           onPress={handleDeposits}
         >
-          <Text style={styles.noteSaveButtonText}>Deposits</Text>
+          <Text style={styles.noteSaveButtonText}>Add Money</Text>
         </TouchableOpacity>
       </View>
     </View>
