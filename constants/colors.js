@@ -222,7 +222,7 @@ const THEMES = {
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.deepHarvest;
+export const COLORS = THEMES.midnightBerry;
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {
