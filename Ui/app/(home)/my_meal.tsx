@@ -147,6 +147,10 @@ const MyMeal = () => {
         }
 
         const token = await getToken();
+        if (!token) {
+          setErrorMessage("Session expired. Please sign in again.");
+          return;
+        }
         const data = await getMyMealGroup(token);
 
         setBackendUser(data.user || null);
@@ -241,24 +245,6 @@ const MyMeal = () => {
     </View>
   );
 
-  if (isLoading) {
-    return (
-      <SafeAreaView
-        style={styles.container}
-        edges={["top", "left", "right"]}
-      >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView

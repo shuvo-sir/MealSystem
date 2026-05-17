@@ -196,24 +196,16 @@ export default function SignUpScreen() {
 
     try {
       await signUp.verifications.verifyEmailCode({ code });
-
       if (signUp.status === "complete") {
-      await signUp.verifications.verifyEmailCode({ code });
-
       // IMPORTANT FIX
-      const clerkId =
-        signUp.createdUserId || signUp.createdSessionId || signUp.id;
+      const clerkId = signUp.createdUserId;
 
       if (!clerkId) {
         setGeneralError("Clerk ID not found. Please try again.");
         return;
       }
 
-      console.log("CLERK DATA:", {
-        clerkId,
-        fullName,
-        email: emailAddress,
-      });
+            // Avoid logging PII in production/client logs.
 
         const backendUser = await createUser({
           clerkId,

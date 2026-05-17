@@ -2,15 +2,12 @@ import User from "../models/User.js";
 
 export const createUser = async (req, res) => {
   try {
-    console.log("BODY RECEIVED:", req.body);
-
-    const { clerkId, name, email } = req.body;
-
+    const clerkId = req.auth?.userId;
+    const {  name, email } = req.body;
     // ✅ VALIDATION ADDED
     if (!clerkId || !name || !email) {
       return res.status(400).json({
         message: "Missing required fields",
-        received: req.body,
       });
     }
 
@@ -58,6 +55,6 @@ export const getCurrentUser = async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
-    logger.error("Error fetching current user:", error);
+    console.error("Error fetching current user:", error);
   }
 };

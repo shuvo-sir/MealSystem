@@ -172,7 +172,7 @@ export default function HomeScreen() {
     });
   }, [user?.id, userEmail, userName]);
 
-  
+
 
 const loadDashboard = useCallback(async (showInitialLoader = false) => {
   if (!user?.id) return;
@@ -213,9 +213,8 @@ const loadDashboard = useCallback(async (showInitialLoader = false) => {
 
   useEffect(() => {
     if (!user?.id) return;
-
     loadDashboard(true);
-  }, [user?.id]);
+}, [user?.id, loadDashboard]);
 
   useEffect(() => {
     if (!todayEntry) {

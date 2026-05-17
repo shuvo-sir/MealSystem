@@ -8,7 +8,7 @@ const job = new cron.CronJob("*/14 * * * *", function () {
       else console.log("GET request failed", res.statusCode);
     })
     .on("error", (e) => console.error("Error while sending request", e));
-});
+}, null, true);  // 4th param: start=true
 
 export default job;
 

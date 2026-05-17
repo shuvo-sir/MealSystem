@@ -12,8 +12,10 @@ type BalanceCardProps = {
   summary: Summary;
 };
 
-const money = (value: number | string) =>
-  Number(value || 0).toFixed(2);
+  const money = (value: number | string) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+};
 
 export const BalanceCard = ({ summary }: BalanceCardProps) => {
   return (
