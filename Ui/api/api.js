@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://192.168.0.218:5000/api",
+  baseURL: "https://mealsystem.onrender.com/api",
 });
 
 export default API;

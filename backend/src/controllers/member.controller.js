@@ -7,10 +7,13 @@ import JoinRequest from "../models/JoinRequest.js";
 
 export const joinMealGroup = async (req, res) => {
   try {
-    const { inviteCode, userId } = req.body;
+    const { inviteCode } = req.body;
 
-    // 1. Find user
-    const user = await User.findById(userId);
+    const clerkId = req.auth.userId;
+
+    const user = await User.findOne({
+        clerkId,
+      });
 
     if (!user) {
       return res.status(404).json({

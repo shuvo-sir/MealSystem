@@ -27,3 +27,29 @@ export const joinMeal =
 
     return response.data;
 };
+
+
+// get pending requests
+export const getPendingRequests =
+  async (groupId) => {
+
+    const response =
+      await API.get(
+        `/member/requests/${groupId}`
+      );
+
+    return response.data;
+};
+
+
+// accept member
+export const acceptMember =
+  async (requestId) => {
+
+    const response =
+      await API.patch(
+        `/member/accept/${requestId}`
+      );
+
+    return response.data;
+};

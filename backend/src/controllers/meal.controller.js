@@ -10,10 +10,16 @@ export const createMealGroup = async (
   res
 ) => {
   try {
-    const { groupName, userId } = req.body;
+    const { groupName } = req.body;
 
-    // Find user
-    const user = await User.findById(userId);
+    // get clerk user id
+    const clerkId = req.auth.userId;
+
+    // find mongodb user
+    const user =
+      await User.findOne({
+        clerkId,
+      });
 
     if (!user) {
       return res.status(404).json({
