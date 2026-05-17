@@ -4,17 +4,16 @@ import {
   Text,
   TextInput,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
   Linking,
   Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { useSignUp, useAuth } from "@clerk/expo";
 import { authStyles } from "@/assets/styles/auth.styles";
+import { createUser } from "@/api/user.api";
 import {
   validateEmail,
   validatePassword,
@@ -27,7 +26,7 @@ import { COLORS } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function SignUpScreen() {
-  const { signUp, errors, fetchStatus } = useSignUp();
+  const { signUp, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
@@ -197,9 +196,29 @@ export default function SignUpScreen() {
 
     try {
       await signUp.verifications.verifyEmailCode({ code });
-
       if (signUp.status === "complete") {
-        await signUp.finalize({
+      // IMPORTANT FIX
+      const clerkId = signUp.createdUserId;
+
+      if (!clerkId) {
+        setGeneralError("Clerk ID not found. Please try again.");
+        return;
+      }
+
+            // Avoid logging PII in production/client logs.
+
+        const backendUser = await createUser({
+          clerkId,
+          name: fullName.trim(),
+          email: normalizeEmail(emailAddress),
+        });
+
+        if (!backendUser?._id) {
+          setGeneralError("Account created, but database sync failed. Please try again.");
+          return;
+        }
+
+        const { error } = await signUp.finalize({
           navigate: ({ session, decorateUrl }) => {
             // Handle any session tasks if needed
             if (session?.currentTask) {
@@ -211,6 +230,10 @@ export default function SignUpScreen() {
             router.replace(url as any);
           },
         });
+
+        if (error) {
+          setGeneralError(getUserFriendlyError(error));
+        }
       } else {
         setGeneralError("Sign-up verification incomplete. Please try again.");
       }
@@ -258,7 +281,7 @@ export default function SignUpScreen() {
             <View style={authStyles.header}>
               <Text style={authStyles.title}>Verify Your Email</Text>
               <Text style={authStyles.subtitle}>
-                We've sent a verification code to{"\n"}
+                {"We've sent a verification code to"}{"\n"}
                 <Text style={{ fontWeight: "600" }}>{emailAddress}</Text>
               </Text>
             </View>
@@ -321,7 +344,9 @@ export default function SignUpScreen() {
             </Pressable>
 
             <View style={authStyles.resendContainer}>
-              <Text style={authStyles.resendText}>Didn't receive the code?</Text>
+              <Text style={authStyles.resendText}>
+                {"Didn't receive the code?"}
+              </Text>
               {resendCountdown > 0 ? (
                 <Text style={authStyles.timerText}>
                   Resend code in {resendCountdown}s

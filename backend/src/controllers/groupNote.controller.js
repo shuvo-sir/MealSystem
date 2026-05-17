@@ -14,9 +14,9 @@ export const addGroupNote = async (
     const { userId, message } =
       req.body;
 
-    const user = await User.findById(
-      userId
-    );
+    const user = await User.findOne({
+      clerkId: req.auth.userId,
+    });
 
     if (!user) {
       return res.status(404).json({

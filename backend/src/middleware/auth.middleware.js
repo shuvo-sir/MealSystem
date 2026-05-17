@@ -1,3 +1,5 @@
-import { clerkMiddleware } from "@clerk/express";
+import {
+  requireAuth,
+} from "@clerk/express";
 
-export default clerkMiddleware();
+export default requireAuth();

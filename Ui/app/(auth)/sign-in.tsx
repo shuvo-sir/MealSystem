@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
@@ -28,7 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 type SignInStep = "signin" | "mfa";
 
 export default function SignInScreen() {
-  const { signIn, errors, fetchStatus } = useSignIn();
+  const { signIn, fetchStatus } = useSignIn();
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
@@ -303,7 +302,9 @@ export default function SignInScreen() {
                 </Pressable>
 
                 <View style={authStyles.resendContainer}>
-                  <Text style={authStyles.resendText}>Didn't receive the code?</Text>
+                  <Text style={authStyles.resendText}>
+                    {"Didn't receive the code?"}
+                  </Text>
                   {resendCountdown > 0 ? (
                     <Text style={authStyles.timerText}>
                       Resend code in {resendCountdown}s
@@ -442,7 +443,9 @@ export default function SignInScreen() {
                 <View style={authStyles.divider} />
 
                 <View style={authStyles.linkContainer}>
-                  <Text style={authStyles.linkText}>Don't have an account? </Text>
+                  <Text style={authStyles.linkText}>
+                    {"Don't have an account? "}
+                  </Text>
                   <Link href="/(auth)/sign-up">
                     <Text style={authStyles.linkAction}>Sign Up</Text>
                   </Link>

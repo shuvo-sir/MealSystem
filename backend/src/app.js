@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import { clerkMiddleware }
+from "@clerk/express";
 
 import userRoutes from "./routes/user.routes.js";
 import mealRoutes from "./routes/meal.routes.js";
@@ -17,6 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(clerkMiddleware());
 
 app.get("/", (req, res) => {
   res.send("Meal App API Running");
