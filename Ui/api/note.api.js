@@ -1,14 +1,15 @@
-import API from "./api";
+import API, { authConfig } from "./api";
 
 
 // add note
 export const addGroupNote =
-  async (data) => {
+  async (data, token) => {
 
     const response =
       await API.post(
         "/group-notes/add",
-        data
+        data,
+        authConfig(token)
       );
 
     return response.data;
@@ -17,11 +18,12 @@ export const addGroupNote =
 
 // get notes
 export const getGroupNotes =
-  async (groupId) => {
+  async (groupId, token) => {
 
     const response =
       await API.get(
-        `/group-notes/${groupId}`
+        `/group-notes/${groupId}`,
+        authConfig(token)
       );
 
     return response.data;

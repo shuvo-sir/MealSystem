@@ -1,7 +1,9 @@
 import Deposit from "../models/Deposit.js";
 import Expense from "../models/Expense.js";
+import MealEntry from "../models/MealEntry.js";
 import MealGroup from "../models/MealGroup.js";
 import User from "../models/User.js";
+import calculateMealRate from "../utils/calculateMealRate.js";
 
 
 // ==============================
@@ -119,6 +121,23 @@ export const addExpense = async (
       );
 
     group.totalExpense += amount;
+    const groupMealTotals = await MealEntry.aggregate([
+      {
+        $match: {
+          mealGroup: group._id,
+        },
+      },
+      {
+        $group: {
+          _id: "$mealGroup",
+          totalMeals: { $sum: "$totalMeals" },
+        },
+      },
+    ]);
+    group.mealRate = calculateMealRate(
+      group.totalExpense,
+      groupMealTotals[0]?.totalMeals || 0
+    );
 
     await group.save();
 

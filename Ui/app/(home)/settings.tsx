@@ -14,7 +14,6 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useClerk, useUser } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -1343,7 +1342,7 @@ export default function SettingsScreen() {
                 Contact Support
               </Text>
               <Text style={{ fontSize: 13, color: COLORS.textLight, marginBottom: 12 }}>
-                Have a question or issue? Send us a message and we'll get back to you within 24 hours.
+                {"Have a question or issue? Send us a message and we'll get back to you within 24 hours."}
               </Text>
               <TextInput
                 style={{

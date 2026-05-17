@@ -1,6 +1,7 @@
 import MealGroup from "../models/MealGroup.js";
 import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
+import { getMealGroupPayloadForUser } from "./meal.controller.js";
 
 
 // Join meal group with invite code
@@ -39,30 +40,35 @@ export const joinMealGroup = async (req, res) => {
       });
     }
 
-    // 4. Check duplicate request
-    const existingRequest =
-      await JoinRequest.findOne({
-        user: user._id,
-        mealGroup: group._id,
-      });
+    user.mealGroup = group._id;
+    await user.save();
 
-    if (existingRequest) {
-      return res.status(400).json({
-        message: "Request already sent",
-      });
+    const isMember = group.members.some(
+      (member) =>
+        member.toString() === user._id.toString()
+    );
+
+    if (!isMember) {
+      group.members.push(user._id);
+      await group.save();
     }
 
-    // 5. Create join request
-    const request = await JoinRequest.create({
-      user: user._id,
-      mealGroup: group._id,
-      status: "pending",
-    });
+    await JoinRequest.findOneAndUpdate(
+      {
+        user: user._id,
+        mealGroup: group._id,
+      },
+      {
+        status: "accepted",
+      }
+    );
+
+    const payload = await getMealGroupPayloadForUser(user);
 
     res.status(201).json({
       success: true,
-      message: "Join request sent",
-      request,
+      message: "Meal group joined",
+      ...payload,
     });
   } catch (error) {
     res.status(500).json({

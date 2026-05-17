@@ -1,5 +1,7 @@
 import MealEntry from "../models/MealEntry.js";
+import MealGroup from "../models/MealGroup.js";
 import User from "../models/User.js";
+import calculateMealRate from "../utils/calculateMealRate.js";
 
 export const addMealEntry = async (
   req,
@@ -67,6 +69,30 @@ export const addMealEntry = async (
     user.totalMeals += totalMeals;
 
     await user.save();
+
+    const groupMealTotals = await MealEntry.aggregate([
+      {
+        $match: {
+          mealGroup: user.mealGroup,
+        },
+      },
+      {
+        $group: {
+          _id: "$mealGroup",
+          totalMeals: { $sum: "$totalMeals" },
+        },
+      },
+    ]);
+
+    const group = await MealGroup.findById(user.mealGroup);
+
+    if (group) {
+      group.mealRate = calculateMealRate(
+        group.totalExpense,
+        groupMealTotals[0]?.totalMeals || 0
+      );
+      await group.save();
+    }
 
     res.status(201).json({
       success: true,

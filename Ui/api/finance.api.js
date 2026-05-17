@@ -1,14 +1,15 @@
-import API from "./api";
+import API, { authConfig } from "./api";
 
 
 // add deposit
 export const addDeposit =
-  async (data) => {
+  async (data, token) => {
 
     const response =
       await API.post(
         "/finance/deposit",
-        data
+        data,
+        authConfig(token)
       );
 
     return response.data;
@@ -17,12 +18,13 @@ export const addDeposit =
 
 // add expense
 export const addExpense =
-  async (data) => {
+  async (data, token) => {
 
     const response =
       await API.post(
         "/finance/expense",
-        data
+        data,
+        authConfig(token)
       );
 
     return response.data;
