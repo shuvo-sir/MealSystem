@@ -3,20 +3,26 @@ import express from "express";
 import {
   addGroupNote,
   getGroupNotes,
+  deleteGroupNote,
 } from "../controllers/groupNote.controller.js";
-import authMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 
 // add note
-router.post("/add", authMiddleware, addGroupNote);
+router.post("/add", addGroupNote);
 
 // get notes
 router.get(
   "/:groupId",
-  authMiddleware,
+
   getGroupNotes
+);
+
+// delete note
+router.delete(
+  "/:noteId",
+  deleteGroupNote
 );
 
 export default router;

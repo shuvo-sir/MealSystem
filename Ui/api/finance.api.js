@@ -29,3 +29,59 @@ export const addExpense =
 
     return response.data;
 };
+
+
+// get transactions
+export const getTransactions = async (
+  groupId,
+  filters = {},
+  token
+) => {
+  try {
+    const params = new URLSearchParams({
+      groupId,
+      ...filters,
+    });
+
+    const response = await API.get(
+      `/finance/transactions?${params.toString()}`,
+      authConfig(token)
+    );
+
+    return response.data;
+  } catch (error) {
+    throw {
+      ...error,
+      message: error.response?.data?.message || error.message,
+      code: error.response?.data?.code,
+    };
+  }
+};
+
+
+// get expense history
+export const getExpenseHistory = async (
+  groupId,
+  filters = {},
+  token
+) => {
+  try {
+    const params = new URLSearchParams({
+      groupId,
+      ...filters,
+    });
+
+    const response = await API.get(
+      `/finance/expenses?${params.toString()}`,
+      authConfig(token)
+    );
+
+    return response.data;
+  } catch (error) {
+    throw {
+      ...error,
+      message: error.response?.data?.message || error.message,
+      code: error.response?.data?.code,
+    };
+  }
+};
