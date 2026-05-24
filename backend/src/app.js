@@ -37,4 +37,3 @@ app.use("/api/group-notes", requireAuth, groupNoteRoutes);
 
 export default app;
 
-export default app;
