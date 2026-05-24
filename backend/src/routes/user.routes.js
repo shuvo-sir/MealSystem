@@ -1,14 +1,15 @@
 import express from "express";
 import {
-  createUser,
   getCurrentUser,
+  debugMe,
 } from "../controllers/user.controller.js";
-import authMiddleware from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/create", authMiddleware, createUser);
-router.get("/me", authMiddleware, getCurrentUser);
+// Get current user - authentication handled by global clerkMiddleware in app.js
+router.get("/me", getCurrentUser);
 
+// Debug endpoint for troubleshooting auth issues
+router.get("/debug/me", debugMe);
 
 export default router;

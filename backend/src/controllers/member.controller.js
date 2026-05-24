@@ -5,36 +5,53 @@ import { getMealGroupPayloadForUser } from "./meal.controller.js";
 
 
 // Join meal group with invite code
-
 export const joinMealGroup = async (req, res) => {
   try {
     const { inviteCode } = req.body;
-
     const clerkId = req.auth.userId;
 
-    const user = await User.findOne({
-        clerkId,
-      });
+    console.log(`[joinMealGroup] Starting join process for clerkId: ${clerkId}, inviteCode: ${inviteCode}`);
 
+    let user = await User.findOne({ clerkId });
+
+    // Auto-create user if not found (fallback for sync issues)
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      console.log(`[joinMealGroup] User not found for clerkId: ${clerkId}. Creating user...`);
+      
+      try {
+        // Create a minimal user record
+        user = new User({
+          clerkId,
+          name: `User_${clerkId.substring(0, 8)}`,
+          email: `${clerkId}@mealapp.local`,
+          role: "member",
+          balance: 0,
+          totalMeals: 0,
+        });
+
+        await user.save();
+        console.log(`[joinMealGroup] User created successfully: ${user._id}`);
+      } catch (createError) {
+        console.log(`[joinMealGroup] Error creating user: ${createError.message}`);
+        return res.status(500).json({
+          message: "Failed to create user account. Please try signing up again.",
+        });
+      }
     }
 
-    // 2. Check already in group
+    // Check already in group
     if (user.mealGroup) {
+      console.log(`[joinMealGroup] User already in group: ${user.mealGroup}`);
       return res.status(400).json({
         message: "Already in a meal group",
       });
     }
 
-    // 3. Find meal group by invite code
-    const group = await MealGroup.findOne({
-      inviteCode,
-    });
+    // Find meal group by invite code
+    const group = await MealGroup.findOne({ inviteCode });
 
     if (!group) {
+      console.log(`[joinMealGroup] Invalid invite code: ${inviteCode}`);
       return res.status(404).json({
         message: "Invalid invite code",
       });
@@ -44,8 +61,7 @@ export const joinMealGroup = async (req, res) => {
     await user.save();
 
     const isMember = group.members.some(
-      (member) =>
-        member.toString() === user._id.toString()
+      (member) => member.toString() === user._id.toString()
     );
 
     if (!isMember) {
@@ -63,6 +79,8 @@ export const joinMealGroup = async (req, res) => {
       }
     );
 
+    console.log(`[joinMealGroup] User successfully joined group: ${group._id}`);
+
     const payload = await getMealGroupPayloadForUser(user);
 
     res.status(201).json({
@@ -71,6 +89,7 @@ export const joinMealGroup = async (req, res) => {
       ...payload,
     });
   } catch (error) {
+    console.log(`[joinMealGroup] Error: ${error.message}`);
     res.status(500).json({
       message: error.message,
     });

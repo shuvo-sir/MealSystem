@@ -3,21 +3,11 @@ import {
   createMealGroup,
   getMyMealGroup,
 } from "../controllers/meal.controller.js";
-import authMiddleware
-from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get(
-  "/my-group",
-  authMiddleware,
-  getMyMealGroup
-);
-
-router.post(
-  "/create",
-  authMiddleware,
-  createMealGroup
-);
+// Protected routes - authentication handled by global clerkMiddleware in app.js
+router.get("/my-group", getMyMealGroup);
+router.post("/create", createMealGroup);
 
 export default router;

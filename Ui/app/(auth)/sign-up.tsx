@@ -28,6 +28,8 @@ import { Ionicons } from "@expo/vector-icons";
 export default function SignUpScreen() {
   const { signUp, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
+  const { getToken } = useAuth();
+
   const router = useRouter();
 
   // Form state
@@ -185,62 +187,96 @@ export default function SignUpScreen() {
   };
 
   // Handle verification code submission
-  const handleVerifySubmit = async () => {
-    setSubmitted(true);
+const handleVerifySubmit = async () => {
+  console.log("VERIFY BUTTON CLICKED");
 
-    const codeValidation = validateVerificationCode(code);
-    if (!codeValidation.valid) {
-      setCodeError(codeValidation.error || null);
+  setSubmitted(true);
+
+  const codeValidation = validateVerificationCode(code);
+
+  if (!codeValidation.valid) {
+    console.log("CODE INVALID");
+    setCodeError(codeValidation.error || null);
+    return;
+  }
+
+  try {
+    console.log("START VERIFY REQUEST");
+
+    const result = await signUp.verifications.verifyEmailCode({ code });
+
+    console.log("VERIFY RESULT:", result);
+
+    if (result.error) {
+      setGeneralError(getUserFriendlyError(result.error));
       return;
     }
 
-    try {
-      await signUp.verifications.verifyEmailCode({ code });
-      if (signUp.status === "complete") {
-      // IMPORTANT FIX
+    console.log("SIGNUP STATUS:", signUp.status);
+
+    // 🔥 IMPORTANT FIX: Clerk session must be active
+    if (signUp.status === "complete") {
+      console.log("SIGNUP COMPLETE");
+
       const clerkId = signUp.createdUserId;
 
-      if (!clerkId) {
-        setGeneralError("Clerk ID not found. Please try again.");
-        return;
-      }
+      console.log("✓ CLERK ID:", clerkId);
+      console.log("✓ SENDING TO BACKEND (NO TOKEN NEEDED - PUBLIC ENDPOINT):", { clerkId, name: fullName.trim(), email: normalizeEmail(emailAddress) });
 
-            // Avoid logging PII in production/client logs.
+      try {
+        // 🔥 NOTE: /api/users/create doesn't require auth, so we don't need a token
+        const backendUser = await createUser(
+          {
+            clerkId,
+            name: fullName.trim(),
+            email: normalizeEmail(emailAddress),
+          },
+          undefined  // No token needed - endpoint is public
+        );
 
-        const backendUser = await createUser({
-          clerkId,
-          name: fullName.trim(),
-          email: normalizeEmail(emailAddress),
-        });
+        console.log("✓ BACKEND USER CREATED:", backendUser);
 
         if (!backendUser?._id) {
-          setGeneralError("Account created, but database sync failed. Please try again.");
+          // Extract error message from response
+          const errorMsg = backendUser?.message || 
+                          backendUser?.error || 
+                          "Database sync failed. Please try again.";
+          console.error("❌ ERROR:", errorMsg);
+          setGeneralError(errorMsg);
           return;
         }
 
-        const { error } = await signUp.finalize({
-          navigate: ({ session, decorateUrl }) => {
-            // Handle any session tasks if needed
-            if (session?.currentTask) {
-              console.log("Session task:", session.currentTask);
-            }
+        console.log("✓✓✓ SIGNUP SUCCESSFUL - NAVIGATING TO HOME ✓✓✓");
 
-            // Navigate to home
-            const url = decorateUrl("/(home)");
-            router.replace(url as any);
-          },
-        });
+        // Now that user is created in DB, get token and navigate
+        const token = await getToken();
+        
+        // Navigate regardless of token - user will be redirected by auth check
+        router.replace("/(home)");
 
-        if (error) {
-          setGeneralError(getUserFriendlyError(error));
-        }
-      } else {
-        setGeneralError("Sign-up verification incomplete. Please try again.");
+      } catch (apiError: any) {
+        console.error("❌ API ERROR CAUGHT:", apiError);
+        
+        // Extract error message from API response
+        const errorMessage = apiError.response?.data?.message || 
+                            apiError.response?.data?.error ||
+                            apiError.message || 
+                            "Database sync failed. Please try again.";
+        
+        console.error("FINAL ERROR MESSAGE:", errorMessage);
+        setGeneralError(errorMessage);
       }
-    } catch (error) {
-      setGeneralError(getUserFriendlyError(error));
+
+    } else {
+      console.log("SIGNUP NOT COMPLETE - STATUS:", signUp.status);
+      setGeneralError("Sign-up verification incomplete. Please try again.");
     }
-  };
+
+  } catch (error) {
+    console.log("VERIFY CATCH:", error);
+    setGeneralError(getUserFriendlyError(error));
+  }
+};
 
   // Handle resend code
   const handleResendCode = async () => {
