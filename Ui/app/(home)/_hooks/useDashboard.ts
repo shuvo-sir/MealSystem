@@ -16,8 +16,8 @@ import {
   GroupNote,
   MealEntry,
   MealGroup,
-} from "../types/homeScreen.types";
-import { getErrorMessage, getLocalDateKey, getEntryUserId } from "../utils/homeScreenHelpers";
+} from "../_types/homeScreen.types";
+import { getErrorMessage, getLocalDateKey, getEntryUserId } from "../_utils/homeScreenHelpers";
 
 export const useDashboard = () => {
   const { user } = useUser();
@@ -133,17 +133,22 @@ export const useDashboard = () => {
                 token
               );
 
-        setBackendUser(response.user || null);
-        setMealGroup(response.mealGroup || null);
-        setMembers(response.members || []);
-        setEntries(response.entries || []);
+        if (groupAction === "create") {
+          // For create: update state with the new group
+          setBackendUser(response.user || null);
+          setMealGroup(response.mealGroup || null);
+          setMembers(response.members || []);
+          setEntries(response.entries || []);
+          await loadDashboard(false);
+        }
+        // For join: do NOT update state, user is pending approval
+        // Only show success message
 
-        await loadDashboard(false);
         Alert.alert(
-          "Success",
+          groupAction === "create" ? "Success" : "Request Submitted",
           groupAction === "create"
             ? "Meal group created."
-            : "Meal group joined."
+            : "Your join request has been submitted. Awaiting manager approval."
         );
 
         if (onSuccess) {

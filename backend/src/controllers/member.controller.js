@@ -57,36 +57,32 @@ export const joinMealGroup = async (req, res) => {
       });
     }
 
-    user.mealGroup = group._id;
-    await user.save();
+    // Create a pending join request instead of immediately adding user to group
+    const existingRequest = await JoinRequest.findOne({
+      user: user._id,
+      mealGroup: group._id,
+    });
 
-    const isMember = group.members.some(
-      (member) => member.toString() === user._id.toString()
-    );
-
-    if (!isMember) {
-      group.members.push(user._id);
-      await group.save();
+    if (existingRequest) {
+      return res.status(400).json({
+        message: "You have already submitted a request to join this group. Please wait for manager approval.",
+      });
     }
 
-    await JoinRequest.findOneAndUpdate(
-      {
-        user: user._id,
-        mealGroup: group._id,
-      },
-      {
-        status: "accepted",
-      }
-    );
+    // Create new JoinRequest with pending status
+    const joinRequest = new JoinRequest({
+      user: user._id,
+      mealGroup: group._id,
+      status: "pending",
+    });
 
-    console.log(`[joinMealGroup] User successfully joined group: ${group._id}`);
+    await joinRequest.save();
 
-    const payload = await getMealGroupPayloadForUser(user);
+    console.log(`[joinMealGroup] Join request created with pending status for user: ${user._id}, group: ${group._id}`);
 
     res.status(201).json({
       success: true,
-      message: "Meal group joined",
-      ...payload,
+      message: "Request submitted. Awaiting manager approval.",
     });
   } catch (error) {
     console.log(`[joinMealGroup] Error: ${error.message}`);

@@ -17,8 +17,8 @@ import { useUser } from "@clerk/expo";
 import { BalanceCard } from "@/components/BalanceCard";
 import { COLORS } from "@/constants/colors";
 import { styles } from "../../../assets/styles/home.styles";
-import { BackendUser, MealEntry, MealGroup, GroupNote } from "../types/homeScreen.types";
-import { formatNoteDate } from "../utils/homeScreenHelpers";
+import { BackendUser, MealEntry, MealGroup, GroupNote } from "../_types/homeScreen.types";
+import { formatNoteDate } from "../_utils/homeScreenHelpers";
 
 interface DashboardScreenProps {
   backendUser: BackendUser | null;
@@ -146,16 +146,56 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
           {/* Balance Card */}
           {mealGroup && (
-            <BalanceCard
-              summary={{
-                balance: backendUser?.balance || 0,
-                mealRate: mealGroup.mealRate || 0,
-                totalExpenses: mealGroup.totalExpense || 0,
-              }}
-            />
+            <>
+              <BalanceCard
+                summary={{
+                  balance: backendUser?.balance || 0,
+                  mealRate: mealGroup.mealRate || 0,
+                  totalExpenses: mealGroup.totalExpense || 0,
+                }}
+              />
+
+              {/* Quick Stats Section - Total Balance & Deposits */}
+              <View
+                style={{
+                  marginTop: 16,
+                  backgroundColor: COLORS.card,
+                  borderRadius: 12,
+                  padding: 16,
+                  gap: 12,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingBottom: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: COLORS.border,
+                  }}
+                >
+                  <Text style={{ color: COLORS.textLight, fontSize: 14 }}>Total Balance</Text>
+                  <Text style={{ fontWeight: "600", color: COLORS.primary, fontSize: 14 }}>
+                    BDT {(backendUser?.balance || 0).toFixed(2)}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: COLORS.textLight, fontSize: 14 }}>Total Deposits</Text>
+                  <Text style={{ fontWeight: "600", color: COLORS.income, fontSize: 14 }}>
+                    BDT {(mealGroup?.totalDeposit || 0).toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            </>
           )}
 
-          {/* Meal Selection Section */}
+          {/* Meal Selection Section */}}
           <Text style={styles.mealSectionTitle}>Add Your Meal</Text>
           <View style={styles.mealCardsContainer}>
             {meals.map((meal) => {

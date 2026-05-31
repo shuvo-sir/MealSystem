@@ -10,8 +10,8 @@ import {
 import {
   BackendUser,
   MealGroup,
-} from "../types/homeScreen.types";
-import { getErrorMessage } from "../utils/homeScreenHelpers";
+} from "../_types/homeScreen.types";
+import { getErrorMessage } from "../_utils/homeScreenHelpers";
 
 export interface Transaction {
   _id: string;

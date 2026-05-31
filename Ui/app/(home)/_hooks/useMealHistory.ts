@@ -11,8 +11,8 @@ import {
   BackendUser,
   MealEntry,
   MealGroup,
-} from "../types/homeScreen.types";
-import { getErrorMessage } from "../utils/homeScreenHelpers";
+} from "../_types/homeScreen.types";
+import { getErrorMessage } from "../_utils/homeScreenHelpers";
 
 export interface MealHistoryFilter {
   startDate?: string;

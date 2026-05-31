@@ -1,56 +1,52 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
   Text,
   ScrollView,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  Alert,
   Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "@clerk/expo";
+import { useAuth } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
-import { useMealHistory, MealHistoryFilter } from "./_hooks/useMealHistory";
-import { styles } from "@/assets/styles/home.styles";
+import { styles } from "@/assets/styles/myMeal.styles";
 import { COLORS } from "@/constants/colors";
-import { MealEntry } from "./_types/homeScreen.types";
-import { BalanceCard } from "@/components/BalanceCard";
+import { getMealHistory, getMyMealGroup } from "@/api/meal.api";
+
+interface MemberMealData {
+  id: string;
+  name: string;
+  total: number;
+  daily: number[];
+}
 
 export default function MyMealScreen() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [avatarImageFailed, setAvatarImageFailed] = useState(false);
+  const hasLoadedRef = useRef(false);
 
-  // Meal history hook
-  const {
-    backendUser,
-    mealGroup,
-    entries,
-    isLoading,
-    refreshing,
-    actionLoading,
-    errorMessage,
-    selectedFilter,
-    loadMealHistory,
-    handleFilterChange,
-    handleUpdateEntry,
-    handleDeleteEntry,
-  } = useMealHistory();
+  // State management
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [memberMeals, setMemberMeals] = useState<MemberMealData[]>([]);
+  const [mealGroup, setMealGroup] = useState(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
-  // Filter UI state
-  const [startDateInput, setStartDateInput] = useState("");
-  const [endDateInput, setEndDateInput] = useState("");
-  const [mealTypeFilter, setMealTypeFilter] = useState<"all" | "breakfast" | "lunch" | "dinner">("all");
+  // Get the number of days in the current month
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month, 0).getDate();
+  };
 
-  // Edit modal state
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<MealEntry | null>(null);
-  const [editBreakfast, setEditBreakfast] = useState("");
-  const [editLunch, setEditLunch] = useState("");
-  const [editDinner, setEditDinner] = useState("");
+  const daysInCurrentMonth = useMemo(
+    () => getDaysInMonth(currentMonth, currentYear),
+    [currentMonth, currentYear]
+  );
 
   const userName = useMemo(
     () =>
@@ -69,78 +65,181 @@ export default function MyMealScreen() {
     [user?.emailAddresses, user?.primaryEmailAddress]
   );
 
-  const handleApplyFilters = async () => {
-    const newFilter: MealHistoryFilter = {
-      mealType: mealTypeFilter,
-    };
+  // Transform raw entries into member-wise daily breakdown
+  const transformMealData = (entries: any[], groupMembers: any[], daysCount: number) => {
+    const memberMap = new Map<string, Map<string, number>>();
 
-    if (startDateInput.trim()) {
-      newFilter.startDate = startDateInput;
+    // Initialize map with all members and days
+    groupMembers.forEach((member) => {
+      memberMap.set(member._id, new Map());
+      for (let i = 1; i <= daysCount; i++) {
+        const dayKey = `day${i}`;
+        memberMap.get(member._id).set(dayKey, 0);
+      }
+    });
+
+    // Populate with actual meal data
+    entries.forEach((entry) => {
+      const userId = typeof entry.user === "string" ? entry.user : entry.user?._id;
+      if (!userId || !memberMap.has(userId)) return;
+
+      // Extract day from date (assuming format YYYY-MM-DD)
+      const dayMatch = entry.date?.match(/-(\d{2})$/);
+      if (dayMatch) {
+        const day = parseInt(dayMatch[1], 10);
+        if (day >= 1 && day <= daysCount) {
+          const dayKey = `day${day}`;
+          const dayMeals =
+            (entry.breakfast || 0) + (entry.lunch || 0) + (entry.dinner || 0);
+          memberMap.get(userId).set(dayKey, dayMeals);
+        }
+      }
+    });
+
+    // Convert to display format
+    return groupMembers.map((member) => {
+      const dailyData = memberMap.get(member._id);
+      const dailyArray = [];
+      let total = 0;
+
+      for (let i = 1; i <= daysCount; i++) {
+        const count = dailyData.get(`day${i}`) || 0;
+        dailyArray.push(count);
+        total += count;
+      }
+
+      return {
+        id: member._id,
+        name: member.name,
+        total,
+        daily: dailyArray,
+      };
+    });
+  };
+
+  const loadMealHistory = async (showInitialLoader = false) => {
+    if (!user?.id) return;
+
+    if (showInitialLoader) setIsLoading(true);
+    else setRefreshing(true);
+
+    setErrorMessage(null);
+
+    try {
+      const token = await getToken();
+
+      // Get user's meal group and members
+      const dashboard = await getMyMealGroup(token);
+      setMealGroup(dashboard.mealGroup || null);
+      setMembers(dashboard.members || []);
+
+      if (dashboard.mealGroup?._id) {
+        // Fetch all meal entries for the group (no userId filter = all members)
+        const historyData = await getMealHistory(
+          dashboard.mealGroup._id,
+          {}, // empty filters = all entries
+          token
+        );
+
+        // Transform data for table display
+        const transformed = transformMealData(
+          historyData.entries || [],
+          dashboard.members || [],
+          daysInCurrentMonth
+        );
+        setMemberMeals(transformed);
+      } else {
+        setMemberMeals([]);
+      }
+    } catch (error: any) {
+      setErrorMessage(
+        error.response?.data?.message || error.message || "Failed to load meal history"
+      );
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
     }
-    if (endDateInput.trim()) {
-      newFilter.endDate = endDateInput;
-    }
-
-    await handleFilterChange(newFilter);
   };
 
-  const openEditModal = (entry: MealEntry) => {
-    setSelectedEntry(entry);
-    setEditBreakfast(String(entry.breakfast || 0));
-    setEditLunch(String(entry.lunch || 0));
-    setEditDinner(String(entry.dinner || 0));
-    setEditModalVisible(true);
-  };
+  useEffect(() => {
+    if (!user?.id || hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    loadMealHistory(true);
+  }, [user?.id]);
 
-  const closeEditModal = () => {
-    setEditModalVisible(false);
-    setSelectedEntry(null);
-    setEditBreakfast("");
-    setEditLunch("");
-    setEditDinner("");
-  };
+  const daysInMonth = Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1);
 
-  const handleSaveEdit = async () => {
-    if (!selectedEntry) return;
+  // Format the month and year display
+  const monthYearString = useMemo(() => {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return `${monthNames[currentMonth - 1]} ${currentYear}`;
+  }, [currentMonth, currentYear]);
 
-    const breakfast = parseFloat(editBreakfast) || 0;
-    const lunch = parseFloat(editLunch) || 0;
-    const dinner = parseFloat(editDinner) || 0;
+  // --- UI COMPONENTS ---
 
-    if (breakfast < 0 || lunch < 0 || dinner < 0) {
-      Alert.alert("Invalid input", "Meal values must be non-negative.");
-      return;
-    }
+  const TableHeader = () => (
+    <View
+      style={[
+        styles.tableRow,
+        { borderBottomWidth: 2, borderBottomColor: COLORS.border },
+      ]}
+    >
+      {/* Fixed Width Headers */}
+      <Text style={[styles.NameCell, { width: 80 }]}>Name</Text>
+      <Text style={[styles.totalCell, { width: 50, textAlign: "center" }]}>
+        Total
+      </Text>
 
-    await handleUpdateEntry(
-      selectedEntry._id,
-      {
-        breakfast,
-        lunch,
-        dinner,
-      },
-      closeEditModal
-    );
-  };
-
-  const handleConfirmDelete = (entryId: string) => {
-    Alert.alert("Delete entry", "Are you sure you want to delete this meal entry?", [
-      { text: "Cancel", onPress: () => {}, style: "cancel" },
-      {
-        text: "Delete",
-        onPress: () => handleDeleteEntry(entryId),
-        style: "destructive",
-      },
-    ]);
-  };
-
-  const totalMeals = useMemo(
-    () => entries.reduce((sum, entry) => sum + (entry.totalMeals || 0), 0),
-    [entries]
+      {/* Day Labels */}
+      {daysInMonth.map((day) => (
+        <View
+          key={day}
+          style={[styles.dayBox, { backgroundColor: "transparent" }]}
+        >
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "bold",
+              textAlign: "center",
+              color: COLORS.textLight,
+            }}
+          >
+            Day {day}
+          </Text>
+        </View>
+      ))}
+    </View>
   );
 
-  const mealCost = (totalMeals || 0) * (mealGroup?.mealRate || 0);
-  const balanceAfterMeals = (backendUser?.balance || 0) - mealCost;
+  const renderMemberRow = ({ item }: { item: MemberMealData }) => (
+    <View style={styles.tableRow}>
+      {/* Name Column */}
+      <Text style={[styles.NameCell, { width: 80 }]}>{item.name}</Text>
+
+      {/* Total Column */}
+      <Text style={[styles.totalCell, { width: 50, textAlign: "center" }]}>
+        {item.total}
+      </Text>
+
+      {/* Daily Meal Counts */}
+      {item.daily?.map((count, index) => (
+        <View key={index} style={styles.dayBox}>
+          <Text
+            style={{
+              textAlign: "center",
+              fontWeight: "bold",
+              color: COLORS.text,
+            }}
+          >
+            {count}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -148,27 +247,7 @@ export default function MyMealScreen() {
 
   if (!mealGroup) {
     return (
-      <SafeAreaView style={styles.container}>
-        {/* <View style={styles.content}>
-          <View style={{ alignItems: "center", paddingVertical: 16, marginBottom: 20 }}>
-            {user?.imageUrl && !avatarImageFailed ? (
-              <Image
-                source={{ uri: user.imageUrl }}
-                style={{ width: 60, height: 60, borderRadius: 30 }}
-                onError={() => setAvatarImageFailed(true)}
-              />
-            ) : (
-              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 24, fontWeight: "bold", color: "#FFF" }}>
-                  {user?.firstName?.[0] || "U"}
-                </Text>
-              </View>
-            )}
-            <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginTop: 12 }}>{userName}</Text>
-            <Text style={{ fontSize: 14, color: COLORS.textLight }}>{userEmail}</Text>
-          </View>
-        </View> */}
-
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20 }}
           refreshControl={
@@ -179,7 +258,13 @@ export default function MyMealScreen() {
             />
           }
         >
-          <Text style={{ color: COLORS.textLight, textAlign: "center", fontSize: 15 }}>
+          <Text
+            style={{
+              color: COLORS.textLight,
+              textAlign: "center",
+              fontSize: 15,
+            }}
+          >
             Create or join a meal group from Home.
           </Text>
         </ScrollView>
@@ -188,7 +273,7 @@ export default function MyMealScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -200,7 +285,7 @@ export default function MyMealScreen() {
       >
         <View style={styles.content}>
           {/* Header */}
-          {/* <View style={{ alignItems: "center", paddingVertical: 16, marginBottom: 20 }}>
+          <View style={{ alignItems: "center", paddingVertical: 16, marginBottom: 20 }}>
             {user?.imageUrl && !avatarImageFailed ? (
               <Image
                 source={{ uri: user.imageUrl }}
@@ -208,26 +293,41 @@ export default function MyMealScreen() {
                 onError={() => setAvatarImageFailed(true)}
               />
             ) : (
-              <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 24, fontWeight: "bold", color: "#FFF" }}>
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
+                  backgroundColor: COLORS.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: "#FFF",
+                  }}
+                >
                   {user?.firstName?.[0] || "U"}
                 </Text>
               </View>
             )}
-            <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginTop: 12 }}>{userName}</Text>
-            <Text style={{ fontSize: 14, color: COLORS.textLight }}>{userEmail}</Text>
-          </View>
-
-          {/* Balance Card */}
-          {backendUser && mealGroup && (
-            <BalanceCard
-              summary={{
-                balance: backendUser.balance,
-                mealRate: mealGroup.mealRate,
-                totalExpenses: mealCost,
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: COLORS.text,
+                marginTop: 12,
               }}
-            />
-          )}
+            >
+              {userName}
+            </Text>
+            <Text style={{ fontSize: 14, color: COLORS.textLight }}>
+              {userEmail}
+            </Text>
+          </View>
 
           {/* Error Message */}
           {errorMessage && (
@@ -237,281 +337,42 @@ export default function MyMealScreen() {
                 marginBottom: 12,
                 fontWeight: "600",
                 paddingHorizontal: 20,
+                textAlign: "center",
               }}
             >
               {errorMessage}
             </Text>
           )}
 
-          {/* Filters Section */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginTop: 10, marginBottom: 10 }}>Filters</Text>
+          <Text style={styles.totalMealDetailsTitle}>Meal History - {monthYearString}</Text>
 
-            {/* Date Range */}
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 4 }}>
-                Start Date (YYYY-MM-DD)
-              </Text>
-              <TextInput
-                style={{ borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: COLORS.text }}
-                placeholder="2024-01-01"
-                value={startDateInput}
-                onChangeText={setStartDateInput}
-              />
-            </View>
-
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 4 }}>
-                End Date (YYYY-MM-DD)
-              </Text>
-              <TextInput
-                style={{ borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: COLORS.text }}
-                placeholder="2024-12-31"
-                value={endDateInput}
-                onChangeText={setEndDateInput}
-              />
-            </View>
-
-            {/* Meal Type Toggle */}
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 8 }}>
-                Meal Type
-              </Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {["all", "breakfast", "lunch", "dinner"].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    onPress={() =>
-                      setMealTypeFilter(type as "all" | "breakfast" | "lunch" | "dinner")
-                    }
-                    style={{
-                      paddingVertical: 6,
-                      paddingHorizontal: 12,
-                      borderRadius: 20,
-                      backgroundColor:
-                        mealTypeFilter === type ? COLORS.primary : COLORS.border,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          mealTypeFilter === type ? "#FFF" : COLORS.textLight,
-                        fontSize: 12,
-                        fontWeight: "600",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Apply Button */}
-            <TouchableOpacity
-              onPress={handleApplyFilters}
+          {/* Synchronized Table Section */}
+          {memberMeals.length === 0 ? (
+            <Text
               style={{
-                backgroundColor: COLORS.primary,
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: "center",
+                color: COLORS.textLight,
+                textAlign: "center",
+                paddingVertical: 20,
               }}
             >
-              <Text style={{ color: "#FFF", fontWeight: "600" }}>Apply Filters</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Meals List */}
-          <View style={{ paddingHorizontal: 20 }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginBottom: 10 }}>Meal History</Text>
-
-            {entries.length === 0 ? (
-              <Text style={{ color: COLORS.textLight, textAlign: "center", paddingVertical: 20 }}>
-                No meal entries found.
-              </Text>
-            ) : (
-              <FlatList
-                data={entries}
-                keyExtractor={(item) => item._id}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <View
-                    style={{
-                      backgroundColor: COLORS.background,
-                      borderRadius: 8,
-                      padding: 12,
-                      marginBottom: 10,
-                      borderLeftWidth: 4,
-                      borderLeftColor: COLORS.primary,
-                    }}
-                  >
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <View>
-                        <Text style={{ fontWeight: "600", color: COLORS.text }}>
-                          {item.date}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 4 }}>
-                          B: {item.breakfast} | L: {item.lunch} | D: {item.dinner}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            color: COLORS.primary,
-                            marginTop: 4,
-                            fontWeight: "600",
-                          }}
-                        >
-                          Total: {item.totalMeals} meal{item.totalMeals !== 1 ? "s" : ""}
-                        </Text>
-                        {item.note && (
-                          <Text style={{ fontSize: 11, color: COLORS.textLight, marginTop: 4 }}>
-                            Note: {item.note}
-                          </Text>
-                        )}
-                      </View>
-
-                      {/* Edit & Delete Buttons */}
-                      <View style={{ gap: 8 }}>
-                        <TouchableOpacity
-                          onPress={() => openEditModal(item)}
-                          disabled={actionLoading}
-                          style={{
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            backgroundColor: COLORS.primary,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
-                            Edit
-                          </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          onPress={() => handleConfirmDelete(item._id)}
-                          disabled={actionLoading}
-                          style={{
-                            paddingVertical: 6,
-                            paddingHorizontal: 12,
-                            backgroundColor: COLORS.expense,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
-                            Delete
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </View>
-                )}
-              />
-            )}
-          </View>
+              No meal entries found.
+            </Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View>
+                <FlatList
+                  data={memberMeals}
+                  keyExtractor={(item) => item.id}
+                  ListHeaderComponent={TableHeader}
+                  renderItem={renderMemberRow}
+                  contentContainerStyle={{ paddingHorizontal: 20 }}
+                  scrollEnabled={false} // Disable vertical scroll (parent handles it)
+                />
+              </View>
+            </ScrollView>
+          )}
         </View>
       </ScrollView>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={editModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeEditModal}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: COLORS.background,
-              borderRadius: 12,
-              padding: 20,
-              width: "85%",
-            }}
-          >
-            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 16 }}>
-              Edit Meal Entry - {selectedEntry?.date}
-            </Text>
-
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 4 }}>
-                Breakfast
-              </Text>
-              <TextInput
-                style={{ borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: COLORS.text }}
-                placeholder="0"
-                value={editBreakfast}
-                onChangeText={setEditBreakfast}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={{ marginBottom: 12 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 4 }}>
-                Lunch
-              </Text>
-              <TextInput
-                style={{ borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: COLORS.text }}
-                placeholder="0"
-                value={editLunch}
-                onChangeText={setEditLunch}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={{ marginBottom: 16 }}>
-              <Text style={{ color: COLORS.textLight, fontSize: 12, marginBottom: 4 }}>
-                Dinner
-              </Text>
-              <TextInput
-                style={{ borderColor: COLORS.border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: COLORS.text }}
-                placeholder="0"
-                value={editDinner}
-                onChangeText={setEditDinner}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity
-                onPress={closeEditModal}
-                disabled={actionLoading}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  backgroundColor: COLORS.border,
-                  borderRadius: 8,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleSaveEdit}
-                disabled={actionLoading}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  backgroundColor: COLORS.primary,
-                  borderRadius: 8,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: "#FFF", fontWeight: "600" }}>
-                  {actionLoading ? "Saving..." : "Save"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
