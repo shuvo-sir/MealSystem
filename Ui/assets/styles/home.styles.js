@@ -23,6 +23,7 @@ export const styles = StyleSheet.create({
         flex: 1, 
         flexDirection: "row",
         alignItems: "center",
+        gap: 8,
     },
     headerLogo: {
         width: 75,
@@ -107,18 +108,17 @@ export const styles = StyleSheet.create({
         marginBottom: 8,
     },
     balanceAmount: {
-        fontSize: 24,
+        fontSize: 18,
         color: COLORS.text,
         fontWeight: "700",
-        marginBottom: 20,
+        
     },
     balanceStats: {
         flexDirection: "row",
         justifyContent: "space-between",
     },
     balanceStatItem: {
-        flex: 1,
-        alignItems: "center",
+      
     },
     statDivider: {
     borderRightWidth: 1,

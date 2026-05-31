@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useUser } from "@clerk/expo";
 import { COLORS } from "@/constants/colors";
 import { styles } from "../../../assets/styles/home.styles";
-import { GroupAction } from "../types/homeScreen.types";
+import { GroupAction } from "../_types/homeScreen.types";
 
 interface NoGroupScreenProps {
   groupAction: GroupAction;
