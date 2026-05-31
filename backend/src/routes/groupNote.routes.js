@@ -1,4 +1,5 @@
 import express from "express";
+import { validateRequest } from "../middleware/validation.middleware.js";
 
 import {
   addGroupNote,
@@ -9,13 +10,12 @@ import {
 const router = express.Router();
 
 
-// add note
-router.post("/add", addGroupNote);
+// add note - with validation
+router.post("/add", validateRequest("groupNote"), addGroupNote);
 
 // get notes
 router.get(
   "/:groupId",
-
   getGroupNotes
 );
 

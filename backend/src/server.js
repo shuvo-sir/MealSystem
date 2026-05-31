@@ -12,15 +12,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
-
-console.log(
-  "PK:",
-  process.env.CLERK_PUBLISHABLE_KEY
-);
-
-console.log(
-  "SK:",
-  process.env.CLERK_SECRET_KEY
-);

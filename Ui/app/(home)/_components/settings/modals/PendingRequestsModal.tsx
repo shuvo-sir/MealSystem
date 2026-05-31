@@ -23,11 +23,18 @@ interface PendingRequestsModalProps {
 
 interface PendingRequest {
   _id: string;
-  userName?: string;
-  userId?: string;
-  userEmail?: string;
-  inviteCode?: string;
-  joinCode?: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    role?: string;
+    balance?: number;
+    totalMeals?: number;
+  };
+  mealGroup: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
@@ -51,7 +58,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
         return;
       }
       const data = await getPendingRequests(userMealGroupId, token);
-      setRequests(Array.isArray(data) ? data : []);
+      setRequests(data.requests || []);
     } catch (error) {
       console.error("Error loading pending requests:", error);
       Alert.alert("Error", "Failed to load pending requests");
@@ -158,16 +165,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
                       marginBottom: 8,
                     }}
                   >
-                    {request.userName || request.userId}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: COLORS.textLight,
-                      marginBottom: 8,
-                    }}
-                  >
-                    Email: {request.userEmail || "N/A"}
+                    {request.user?.name || "Unknown User"}
                   </Text>
                   <Text
                     style={{
@@ -176,10 +174,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
                       marginBottom: 12,
                     }}
                   >
-                    <Text style={{ fontWeight: "600", color: COLORS.primary }}>
-                      Invite Code:{" "}
-                    </Text>
-                    {request.inviteCode || request.joinCode || "N/A"}
+                    Email: {request.user?.email || "N/A"}
                   </Text>
                   <View
                     style={{

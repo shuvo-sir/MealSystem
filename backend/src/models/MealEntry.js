@@ -39,6 +39,12 @@ const mealEntrySchema = new mongoose.Schema(
       default: 0,
     },
 
+    mealRateAtCreation: {
+      type: Number,
+      default: 0,
+      description: "Snapshot of meal rate at time of entry creation for accurate historical billing",
+    },
+
     note: {
       type: String,
       default: "",
