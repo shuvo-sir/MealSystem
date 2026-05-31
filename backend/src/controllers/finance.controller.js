@@ -4,6 +4,7 @@ import MealEntry from "../models/MealEntry.js";
 import MealGroup from "../models/MealGroup.js";
 import User from "../models/User.js";
 import calculateMealRate from "../utils/calculateMealRate.js";
+import { updateGroupFinancials, addUserBalance, recalculateMealRateAtomic } from "../utils/atomicOperations.js";
 
 
 // ==============================
@@ -24,14 +25,18 @@ export const addDeposit = async (
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
+        code: "USER_NOT_FOUND",
       });
     }
 
     if (!user.mealGroup) {
       return res.status(400).json({
+        success: false,
         message:
           "Join meal group first",
+        code: "NO_MEAL_GROUP",
       });
     }
 
@@ -43,20 +48,14 @@ export const addDeposit = async (
         note,
       });
 
-    // update user balance
-    user.balance += amount;
+    // Use atomic operation to update user balance
+    await addUserBalance(user._id, amount);
 
-    await user.save();
-
-    // update group deposit
-    const group =
-      await MealGroup.findById(
-        user.mealGroup
-      );
-
-    group.totalDeposit += amount;
-
-    await group.save();
+    // Use atomic operation to update group total deposit
+    await MealGroup.findByIdAndUpdate(
+      user.mealGroup,
+      { $inc: { totalDeposit: amount } }
+    );
 
     res.status(201).json({
       success: true,
@@ -65,7 +64,9 @@ export const addDeposit = async (
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
+      code: "INTERNAL_ERROR",
     });
   }
 };
@@ -93,15 +94,22 @@ export const addExpense = async (
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
+        code: "USER_NOT_FOUND",
       });
     }
 
     // only manager can add expense
-    if (user.role !== "manager") {
+    const group = await MealGroup.findById(user.mealGroup);
+    const isManager = group && group.manager.toString() === user._id.toString();
+
+    if (!isManager) {
       return res.status(403).json({
+        success: false,
         message:
           "Only manager can add expense",
+        code: "FORBIDDEN",
       });
     }
 
@@ -114,32 +122,10 @@ export const addExpense = async (
         note,
       });
 
-    // update meal group expense
-    const group =
-      await MealGroup.findById(
-        user.mealGroup
-      );
-
-    group.totalExpense += amount;
-    const groupMealTotals = await MealEntry.aggregate([
-      {
-        $match: {
-          mealGroup: group._id,
-        },
-      },
-      {
-        $group: {
-          _id: "$mealGroup",
-          totalMeals: { $sum: "$totalMeals" },
-        },
-      },
-    ]);
-    group.mealRate = calculateMealRate(
-      group.totalExpense,
-      groupMealTotals[0]?.totalMeals || 0
-    );
-
-    await group.save();
+    // Use atomic operation to update expense and recalculate meal rate
+    await updateGroupFinancials(user.mealGroup, amount, 0);
+    // Recalculate meal rate with new totals
+    await recalculateMealRateAtomic(user.mealGroup);
 
     res.status(201).json({
       success: true,
@@ -148,7 +134,9 @@ export const addExpense = async (
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: error.message,
+      code: "INTERNAL_ERROR",
     });
   }
 };

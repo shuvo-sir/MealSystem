@@ -20,14 +20,18 @@ export const addGroupNote = async (
 
     if (!user) {
       return res.status(404).json({
+        success: false,
         message: "User not found",
+        code: "USER_NOT_FOUND",
       });
     }
 
     if (!user.mealGroup) {
       return res.status(400).json({
+        success: false,
         message:
           "Join meal group first",
+        code: "NO_MEAL_GROUP",
       });
     }
 
@@ -48,7 +52,9 @@ export const addGroupNote = async (
   } catch (error) {
     console.log(`[addGroupNote] Error: ${error.message}`);
     res.status(500).json({
+      success: false,
       message: error.message,
+      code: "INTERNAL_ERROR",
     });
   }
 };
@@ -63,25 +69,42 @@ export const getGroupNotes = async (
   res
 ) => {
   try {
-    const { groupId } = req.params;
+    const { groupId, page = 0, limit = 50 } = req.params;
+
+    const pageNum = Math.max(0, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = pageNum * limitNum;
 
     const notes =
       await GroupNote.find({
         mealGroup: groupId,
       })
         .populate("user", "name")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean();
+
+    const total = await GroupNote.countDocuments({ mealGroup: groupId });
 
     console.log(`[getGroupNotes] Retrieved ${notes.length} notes for group: ${groupId}`);
 
     res.json({
       success: true,
       notes,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     console.log(`[getGroupNotes] Error: ${error.message}`);
     res.status(500).json({
+      success: false,
       message: error.message,
+      code: "INTERNAL_ERROR",
     });
   }
 };
@@ -104,7 +127,9 @@ export const deleteGroupNote = async (
     if (!note) {
       console.log(`[deleteGroupNote] Note not found: ${noteId}`);
       return res.status(404).json({
+        success: false,
         message: "Note not found",
+        code: "NOT_FOUND",
       });
     }
 
@@ -116,7 +141,9 @@ export const deleteGroupNote = async (
     if (!user || note.user.toString() !== user._id.toString()) {
       console.log(`[deleteGroupNote] Unauthorized delete attempt for note: ${noteId}`);
       return res.status(403).json({
+        success: false,
         message: "Unauthorized: Cannot delete other users' notes",
+        code: "FORBIDDEN",
       });
     }
 
@@ -132,7 +159,9 @@ export const deleteGroupNote = async (
   } catch (error) {
     console.log(`[deleteGroupNote] Error: ${error.message}`);
     res.status(500).json({
+      success: false,
       message: error.message,
+      code: "INTERNAL_ERROR",
     });
   }
 };

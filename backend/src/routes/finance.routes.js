@@ -1,4 +1,5 @@
 import express from "express";
+import { validateRequest } from "../middleware/validation.middleware.js";
 
 import {
   addDeposit,
@@ -9,11 +10,11 @@ import {
 
 const router = express.Router();
 
-// deposit
-router.post("/deposit", addDeposit);
+// deposit - with validation
+router.post("/deposit", validateRequest("deposit"), addDeposit);
 
-// expense
-router.post("/expense", addExpense);
+// expense - with validation
+router.post("/expense", validateRequest("expense"), addExpense);
 
 // transactions and history
 router.get("/transactions", getTransactions);

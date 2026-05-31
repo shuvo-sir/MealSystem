@@ -1,4 +1,5 @@
 import express from "express";
+import { validateRequest } from "../middleware/validation.middleware.js";
 
 import {
   addMealEntry,
@@ -9,9 +10,9 @@ import {
 
 const router = express.Router();
 
-router.post("/add", addMealEntry);
+router.post("/add", validateRequest("mealEntry"), addMealEntry);
 router.get("/history", getMealHistory);
-router.patch("/:entryId", updateMealEntry);
+router.patch("/:entryId", validateRequest("updateMealEntry"), updateMealEntry);
 router.delete("/:entryId", deleteMealEntry);
 
 export default router;
