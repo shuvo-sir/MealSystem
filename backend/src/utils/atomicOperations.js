@@ -1,5 +1,6 @@
 import MealGroup from "../models/MealGroup.js";
 import MealEntry from "../models/MealEntry.js";
+import User from "../models/User.js";
 import calculateMealRate from "./calculateMealRate.js";
 import mongoose from "mongoose";
 
@@ -106,8 +107,6 @@ const recalculateMealRateAtomic = async (groupId) => {
  */
 const addUserBalance = async (userId, amount) => {
   try {
-    const User = require('../models/User');
-    
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $inc: { balance: amount } },

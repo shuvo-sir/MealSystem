@@ -20,6 +20,7 @@ export const addMealEntry = async (
 
     // find user
     const user = await User.findOne({ clerkId });
+    const userId = user._id;
 
     if (!user) {
       return res.status(404).json({
