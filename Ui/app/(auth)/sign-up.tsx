@@ -94,10 +94,7 @@ export default function SignUpScreen() {
   // Handle code input change
   const handleCodeChange = (text: string) => {
     setCode(text.replace(/[^0-9]/g, "")); // Only allow digits
-    if (submitted) {
-      const validation = validateVerificationCode(text);
-      setCodeError(validation.error || null);
-    }
+    // Validation only happens on submit, not while typing
   };
 
   // Validate all fields
@@ -248,11 +245,11 @@ const handleVerifySubmit = async () => {
 
         console.log("✓✓✓ SIGNUP SUCCESSFUL - NAVIGATING TO HOME ✓✓✓");
 
-        // Now that user is created in DB, get token and navigate
-        const token = await getToken();
-        
-        // Navigate regardless of token - user will be redirected by auth check
-        router.replace("/(home)");
+        // Now that user is created in DB, navigate to home
+        // The user is already authenticated via Clerk after email verification
+        setTimeout(() => {
+          router.replace("/(home)");
+        }, 500);
 
       } catch (apiError: any) {
         console.error("❌ API ERROR CAUGHT:", apiError);

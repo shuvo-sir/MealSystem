@@ -10,16 +10,16 @@ export const addMealEntry = async (
 ) => {
   try {
     const {
-      userId,
       date,
       breakfast,
       lunch,
       dinner,
       note,
     } = req.body;
+    const clerkId = req.auth?.userId;
 
     // find user
-    const user = await User.findById(userId);
+    const user = await User.findOne({ clerkId });
 
     if (!user) {
       return res.status(404).json({

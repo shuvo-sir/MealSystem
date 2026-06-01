@@ -3,30 +3,50 @@ import Joi from 'joi';
 // Define validation schemas for different endpoints
 const validationSchemas = {
   deposit: Joi.object({
-    userId: Joi.string().required(),
-    amount: Joi.number().positive().required(),
-    note: Joi.string().optional().allow(''),
-  }),
+    amount: Joi.number().positive().required().messages({
+      'number.positive': 'Amount must be greater than 0',
+      'any.required': 'Amount is required'
+    }),
+    note: Joi.string().optional().allow('').max(500),
+  }).unknown(false),
 
   expense: Joi.object({
-    title: Joi.string().required().min(1).max(200),
-    amount: Joi.number().positive().required(),
-    note: Joi.string().optional().allow(''),
-  }),
+    title: Joi.string().required().min(1).max(200).trim().messages({
+      'any.required': 'Title is required',
+      'string.empty': 'Title cannot be empty'
+    }),
+    amount: Joi.number().positive().required().messages({
+      'number.positive': 'Amount must be greater than 0',
+      'any.required': 'Amount is required'
+    }),
+    note: Joi.string().optional().allow('').max(500),
+  }).unknown(false),
 
   mealEntry: Joi.object({
-    userId: Joi.string().required(),
-    date: Joi.date().required(),
-    breakfast: Joi.number().integer().min(0).required(),
-    lunch: Joi.number().integer().min(0).required(),
-    dinner: Joi.number().integer().min(0).required(),
-    note: Joi.string().optional().allow(''),
-  }),
+    date: Joi.alternatives().try(
+      Joi.string().isoDate(),
+      Joi.date()
+    ).required().messages({
+      'any.required': 'Date is required'
+    }),
+    breakfast: Joi.number().integer().min(0).required().messages({
+      'number.min': 'Breakfast value cannot be negative'
+    }),
+    lunch: Joi.number().integer().min(0).required().messages({
+      'number.min': 'Lunch value cannot be negative'
+    }),
+    dinner: Joi.number().integer().min(0).required().messages({
+      'number.min': 'Dinner value cannot be negative'
+    }),
+    note: Joi.string().optional().allow('').max(500),
+  }).unknown(false),
 
   groupNote: Joi.object({
-    userId: Joi.string().required(),
-    message: Joi.string().required().min(1).max(1000),
-  }),
+    message: Joi.string().required().min(1).max(1000).trim().messages({
+      'any.required': 'Message is required',
+      'string.empty': 'Message cannot be empty'
+    }),
+  }).unknown(false),
 
   mealGroup: Joi.object({
     groupName: Joi.string().required().min(1).max(100),

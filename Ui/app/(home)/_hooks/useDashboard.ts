@@ -191,7 +191,6 @@ export const useDashboard = () => {
         const token = await getToken();
         await addMealEntry(
           {
-            userId: backendUser._id,
             date: todayKey,
             breakfast: selectedMeals.includes(1) ? 1 : 0,
             lunch: selectedMeals.includes(2) ? 1 : 0,
@@ -229,7 +228,6 @@ export const useDashboard = () => {
         const token = await getToken();
         await addGroupNote(
           {
-            userId: backendUser._id,
             message: noteMessage.trim(),
           },
           token
