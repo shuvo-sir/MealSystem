@@ -16,12 +16,12 @@ export const addDeposit = async (
   res
 ) => {
   try {
-    const { userId, amount, note } =
-      req.body;
+    const { amount, note } = req.body;
+    const clerkId = req.auth?.userId;
 
-    const user = await User.findById(
-      userId
-    );
+    const user = await User.findOne({
+      clerkId
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -82,15 +82,15 @@ export const addExpense = async (
 ) => {
   try {
     const {
-      userId,
       title,
       amount,
       note,
     } = req.body;
+    const clerkId = req.auth?.userId;
 
-    const user = await User.findById(
-      userId
-    );
+    const user = await User.findOne({
+      clerkId
+    });
 
     if (!user) {
       return res.status(404).json({

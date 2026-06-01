@@ -11,8 +11,7 @@ export const addGroupNote = async (
   res
 ) => {
   try {
-    const { userId, message } =
-      req.body;
+    const { message } = req.body;
 
     const user = await User.findOne({
       clerkId: req.auth.userId,
@@ -69,7 +68,8 @@ export const getGroupNotes = async (
   res
 ) => {
   try {
-    const { groupId, page = 0, limit = 50 } = req.params;
+    const { groupId } = req.params;
+    const { page = 0, limit = 50 } = req.query;
 
     const pageNum = Math.max(0, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));

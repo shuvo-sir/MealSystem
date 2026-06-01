@@ -162,7 +162,6 @@ export const useFinanceHistory = () => {
         const token = await getToken();
         await addDeposit(
           {
-            userId: backendUser._id,
             amount,
             note: note || undefined,
           },
@@ -217,8 +216,7 @@ export const useFinanceHistory = () => {
         const token = await getToken();
         await addExpense(
           {
-            userId: backendUser._id,
-            title: title.trim(),
+            title,
             amount,
             note: note || undefined,
           },
