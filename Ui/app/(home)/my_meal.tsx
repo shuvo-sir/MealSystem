@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
@@ -7,13 +7,15 @@ import {
   FlatList,
   RefreshControl,
   Image,
+  TouchableOpacity,
+  TextInput,
 } from "react-native";
 import { useUser } from "@clerk/expo";
-import { useAuth } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
 import { styles } from "@/assets/styles/myMeal.styles";
 import { COLORS } from "@/constants/colors";
-import { getMealHistory, getMyMealGroup } from "@/api/meal.api";
+import { useMealHistory } from "./_hooks/useMealHistory";
+import { getDayFromDate } from "./_utils/dateRangeHelpers";
 
 interface MemberMealData {
   id: string;
@@ -24,29 +26,29 @@ interface MemberMealData {
 
 export default function MyMealScreen() {
   const { user } = useUser();
-  const { getToken } = useAuth();
   const [avatarImageFailed, setAvatarImageFailed] = useState(false);
-  const hasLoadedRef = useRef(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // State management
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [memberMeals, setMemberMeals] = useState<MemberMealData[]>([]);
-  const [mealGroup, setMealGroup] = useState(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [members, setMembers] = useState<any[]>([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-
-  // Get the number of days in the current month
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month, 0).getDate();
-  };
-
-  const daysInCurrentMonth = useMemo(
-    () => getDaysInMonth(currentMonth, currentYear),
-    [currentMonth, currentYear]
-  );
+  // Use the enhanced meal history hook
+  const {
+    backendUser,
+    mealGroup,
+    members,
+    entries,
+    isLoading,
+    refreshing,
+    errorMessage,
+    currentMonth,
+    currentYear,
+    monthYearLabel,
+    daysInCurrentMonth,
+    viewMode,
+    goToPreviousMonth,
+    goToNextMonth,
+    resetToCurrentMonth,
+    handleViewModeToggle,
+    loadMealHistory,
+  } = useMealHistory();
 
   const userName = useMemo(
     () =>
@@ -66,7 +68,17 @@ export default function MyMealScreen() {
   );
 
   // Transform raw entries into member-wise daily breakdown
-  const transformMealData = (entries: any[], groupMembers: any[], daysCount: number) => {
+  const transformMealData = (
+    entries: any[],
+    groupMembers: any[],
+    daysCount: number
+  ) => {
+    console.log("📊 [transformMealData] Starting:", {
+      entriesCount: entries.length,
+      membersCount: groupMembers.length,
+      daysCount,
+    });
+
     const memberMap = new Map<string, Map<string, number>>();
 
     // Initialize map with all members and days
@@ -78,23 +90,38 @@ export default function MyMealScreen() {
       }
     });
 
-    // Populate with actual meal data
-    entries.forEach((entry) => {
-      const userId = typeof entry.user === "string" ? entry.user : entry.user?._id;
-      if (!userId || !memberMap.has(userId)) return;
+    console.log("✅ Initialized memberMap");
 
-      // Extract day from date (assuming format YYYY-MM-DD)
-      const dayMatch = entry.date?.match(/-(\d{2})$/);
-      if (dayMatch) {
-        const day = parseInt(dayMatch[1], 10);
-        if (day >= 1 && day <= daysCount) {
-          const dayKey = `day${day}`;
-          const dayMeals =
-            (entry.breakfast || 0) + (entry.lunch || 0) + (entry.dinner || 0);
-          memberMap.get(userId).set(dayKey, dayMeals);
-        }
+    // Populate with actual meal data
+    let processedCount = 0;
+    let skippedCount = 0;
+
+    entries.forEach((entry, idx) => {
+      const userId =
+        typeof entry.user === "string" ? entry.user : entry.user?._id;
+      
+      const dayMeals = (entry.breakfast || 0) + (entry.lunch || 0) + (entry.dinner || 0);
+      console.log(`  Entry ${idx}: date=${entry.date}, userId=${userId}, meals=${dayMeals}, found=${memberMap.has(userId)}`);
+
+      if (!userId || !memberMap.has(userId)) {
+        console.log(`    ❌ Skipped`);
+        skippedCount++;
+        return;
+      }
+
+      const day = getDayFromDate(entry.date);
+      if (day && day >= 1 && day <= daysCount) {
+        const dayKey = `day${day}`;
+        console.log(`    ✅ Set ${dayKey} = ${dayMeals}`);
+        memberMap.get(userId)!.set(dayKey, dayMeals);
+        processedCount++;
+      } else {
+        console.log(`    ❌ Skipped: invalid day ${day}`);
+        skippedCount++;
       }
     });
+
+    console.log(`✅ Processing done: ${processedCount} added, ${skippedCount} skipped`);
 
     // Convert to display format
     return groupMembers.map((member) => {
@@ -103,7 +130,7 @@ export default function MyMealScreen() {
       let total = 0;
 
       for (let i = 1; i <= daysCount; i++) {
-        const count = dailyData.get(`day${i}`) || 0;
+        const count = dailyData?.get(`day${i}`) || 0;
         dailyArray.push(count);
         total += count;
       }
@@ -117,69 +144,45 @@ export default function MyMealScreen() {
     });
   };
 
-  const loadMealHistory = async (showInitialLoader = false) => {
-    if (!user?.id) return;
+  // Get members to display based on view mode
+  const displayMembers = useMemo(() => {
+    let membersToShow = members;
 
-    if (showInitialLoader) setIsLoading(true);
-    else setRefreshing(true);
-
-    setErrorMessage(null);
-
-    try {
-      const token = await getToken();
-
-      // Get user's meal group and members
-      const dashboard = await getMyMealGroup(token);
-      setMealGroup(dashboard.mealGroup || null);
-      setMembers(dashboard.members || []);
-
-      if (dashboard.mealGroup?._id) {
-        // Fetch all meal entries for the group (no userId filter = all members)
-        const historyData = await getMealHistory(
-          dashboard.mealGroup._id,
-          {}, // empty filters = all entries
-          token
-        );
-
-        // Transform data for table display
-        const transformed = transformMealData(
-          historyData.entries || [],
-          dashboard.members || [],
-          daysInCurrentMonth
-        );
-        setMemberMeals(transformed);
-      } else {
-        setMemberMeals([]);
-      }
-    } catch (error: any) {
-      setErrorMessage(
-        error.response?.data?.message || error.message || "Failed to load meal history"
-      );
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+    // Personal view: only show logged-in user
+    if (viewMode === "personal" && backendUser) {
+      membersToShow = members.filter((m) => m._id === backendUser._id);
     }
-  };
 
-  useEffect(() => {
-    if (!user?.id || hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
-    loadMealHistory(true);
-  }, [user?.id]);
+    // Filter by search query
+    if (searchQuery.trim()) {
+      membersToShow = membersToShow.filter((m) =>
+        m.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
 
-  const daysInMonth = Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1);
+    return membersToShow;
+  }, [members, viewMode, backendUser, searchQuery]);
 
-  // Format the month and year display
-  const monthYearString = useMemo(() => {
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    return `${monthNames[currentMonth - 1]} ${currentYear}`;
-  }, [currentMonth, currentYear]);
+  // Transform meal data for display
+  const memberMeals = useMemo(() => {
+    console.log("🔄 [memberMeals] Computing:", {
+      entriesCount: entries.length,
+      displayMembersCount: displayMembers.length,
+      daysInCurrentMonth,
+    });
+    const result = transformMealData(entries, displayMembers, daysInCurrentMonth);
+    console.log("✅ [memberMeals] Result:", result.map(m => ({ name: m.name, total: m.total })));
+    return result;
+  }, [entries, displayMembers, daysInCurrentMonth]);
+
+  const daysInMonth = Array.from(
+    { length: daysInCurrentMonth },
+    (_, i) => i + 1
+  );
 
   // --- UI COMPONENTS ---
 
+  // Table Header Component
   const TableHeader = () => (
     <View
       style={[
@@ -214,6 +217,7 @@ export default function MyMealScreen() {
     </View>
   );
 
+  // Member Row Component
   const renderMemberRow = ({ item }: { item: MemberMealData }) => (
     <View style={styles.tableRow}>
       {/* Name Column */}
@@ -284,8 +288,14 @@ export default function MyMealScreen() {
         }
       >
         <View style={styles.content}>
-          {/* Header */}
-          <View style={{ alignItems: "center", paddingVertical: 16, marginBottom: 20 }}>
+          {/* User Header */}
+          <View
+            style={{
+              alignItems: "center",
+              paddingVertical: 16,
+              marginBottom: 20,
+            }}
+          >
             {user?.imageUrl && !avatarImageFailed ? (
               <Image
                 source={{ uri: user.imageUrl }}
@@ -344,7 +354,172 @@ export default function MyMealScreen() {
             </Text>
           )}
 
-          <Text style={styles.totalMealDetailsTitle}>Meal History - {monthYearString}</Text>
+          {/* Month Navigation */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 20,
+              marginBottom: 16,
+            }}
+          >
+            <TouchableOpacity
+              onPress={goToPreviousMonth}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                backgroundColor: COLORS.primary,
+                borderRadius: 6,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFF",
+                  fontWeight: "600",
+                  fontSize: 16,
+                }}
+              >
+                ←
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ alignItems: "center" }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: COLORS.text,
+                }}
+              >
+                {monthYearLabel}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: COLORS.textLight,
+                  marginTop: 2,
+                }}
+              >
+                {viewMode === "personal" ? "My Meals" : "All Members"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={goToNextMonth}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                backgroundColor: COLORS.primary,
+                borderRadius: 6,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFF",
+                  fontWeight: "600",
+                  fontSize: 16,
+                }}
+              >
+                →
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* View Mode Toggle */}
+          <View
+            style={{
+              flexDirection: "row",
+              paddingHorizontal: 20,
+              marginBottom: 16,
+              gap: 8,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => handleViewModeToggle("personal")}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                backgroundColor:
+                  viewMode === "personal" ? COLORS.primary : COLORS.border,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  color:
+                    viewMode === "personal"
+                      ? "#FFF"
+                      : COLORS.textLight,
+                  fontSize: 13,
+                }}
+              >
+                My Meals
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => handleViewModeToggle("group")}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                backgroundColor:
+                  viewMode === "group" ? COLORS.primary : COLORS.border,
+                borderRadius: 8,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "600",
+                  color:
+                    viewMode === "group"
+                      ? "#FFF"
+                      : COLORS.textLight,
+                  fontSize: 13,
+                }}
+              >
+                All Members
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Member Search Box */}
+          <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+            <TextInput
+              placeholder="Search member..."
+              placeholderTextColor={COLORS.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                color: COLORS.text,
+                fontSize: 14,
+              }}
+            />
+          </View>
+
+          {/* Member Count Indicator */}
+          {searchQuery.trim() && (
+            <Text
+              style={{
+                paddingHorizontal: 20,
+                marginBottom: 8,
+                color: COLORS.textLight,
+                fontSize: 12,
+              }}
+            >
+              Found {displayMembers.length} member{displayMembers.length !== 1 ? "s" : ""}
+            </Text>
+          )}
 
           {/* Synchronized Table Section */}
           {memberMeals.length === 0 ? (
@@ -355,7 +530,9 @@ export default function MyMealScreen() {
                 paddingVertical: 20,
               }}
             >
-              No meal entries found.
+              {searchQuery.trim()
+                ? "No members found."
+                : "No meal entries found for this month."}
             </Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -376,3 +553,4 @@ export default function MyMealScreen() {
     </SafeAreaView>
   );
 }
+

@@ -19,7 +19,7 @@ import {
   MealEntry,
   MealGroup,
 } from "../types/homeScreen.types";
-import { getErrorMessage, getLocalDateKey, getEntryUserId } from "../utils/homeScreenHelpers";
+import { getErrorMessage, getErrorInfo, getLocalDateKey, getEntryUserId } from "../utils/homeScreenHelpers";
 
 export const useDashboard = () => {
   const { user } = useUser();
@@ -37,6 +37,8 @@ export const useDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const retryFunctionRef = useRef<(() => Promise<void>) | null>(null);
 
   const todayKey = useMemo(() => getLocalDateKey(), []);
 
@@ -58,6 +60,7 @@ export const useDashboard = () => {
       else setRefreshing(true);
 
       setErrorMessage(null);
+      setIsRetrying(false);
 
       try {
         const token = await getToken();
@@ -76,8 +79,17 @@ export const useDashboard = () => {
         } else {
           setNotesList([]);
         }
+
+        // Clear retry function on success
+        retryFunctionRef.current = null;
       } catch (error) {
-        setErrorMessage(getErrorMessage(error));
+        const errorInfo = getErrorInfo(error);
+        setErrorMessage(errorInfo.message);
+
+        // Store retry function for manual retry if error allows it
+        if (errorInfo.canRetry) {
+          retryFunctionRef.current = () => loadDashboard(showInitialLoader);
+        }
       } finally {
         setIsLoading(false);
         setRefreshing(false);
@@ -274,6 +286,17 @@ export const useDashboard = () => {
     [getToken]
   );
 
+  const handleRetry = useCallback(async () => {
+    if (retryFunctionRef.current) {
+      setIsRetrying(true);
+      try {
+        await retryFunctionRef.current();
+      } finally {
+        setIsRetrying(false);
+      }
+    }
+  }, []);
+
   return {
     // State
     backendUser,
@@ -285,6 +308,7 @@ export const useDashboard = () => {
     refreshing,
     actionLoading,
     errorMessage,
+    isRetrying,
     todayEntry,
 
     // Handlers
@@ -294,5 +318,6 @@ export const useDashboard = () => {
     handleSaveMealEntry,
     handleAddNote,
     handleDeleteNote,
+    handleRetry,
   };
 };
