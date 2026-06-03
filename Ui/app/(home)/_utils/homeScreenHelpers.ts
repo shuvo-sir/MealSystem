@@ -1,4 +1,4 @@
-import { MealEntry } from "../types/homeScreen.types";
+import { MealEntry } from "../_types/homeScreen.types";
 
 export const getErrorMessage = (error: any) =>
   error?.response?.data?.message ||
@@ -20,6 +20,8 @@ export const getLocalDateKey = () => {
 export const formatNoteDate = (dateValue: string) => {
   const date = new Date(dateValue);
 
+  // Format: "MM/DD/YYYY and current time in 12-hour format with AM/PM"
+  
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",

@@ -143,11 +143,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </View>
               {isRetrying ? (
                 <View style={{ marginLeft: 12, justifyContent: "center" }}>
-                  <ActivityIndicator size="small" color={COLORS.error || "#ff6b6b"} />
+                  <ActivityIndicator size="small" color={COLORS.expense || "#ff6b6b"} />
                 </View>
               ) : (
                 <TouchableOpacity onPress={onRetry} style={{ marginLeft: 12 }}>
-                  <Ionicons name="refresh" size={20} color={COLORS.error || "#ff6b6b"} />
+                  <Ionicons name="refresh" size={20} color={COLORS.expense || "#ff6b6b"} />
                 </TouchableOpacity>
               )}
             </View>
@@ -168,6 +168,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   balance: backendUser?.balance || 0,
                   mealRate: mealGroup.mealRate || 0,
                   totalExpenses: mealGroup.totalExpense || 0,
+                  totalDeposit: mealGroup.totalDeposit || 0,
                 }}
               />
 
@@ -211,7 +212,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </>
           )}
 
-          {/* Meal Selection Section */}}
+          {/* Meal Selection Section */}
           <Text style={styles.mealSectionTitle}>Add Your Meal</Text>
           <View style={styles.mealCardsContainer}>
             {meals.map((meal) => {
@@ -245,13 +246,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
 
           {/* Selected Meals Display */}
-          {selectedMeals.length > 0 && (
+          {/* {selectedMeals.length > 0 && (
             <View style={styles.selectedMealsContainer}>
               <Text style={styles.selectedMealsText}>
                 Selected: {selectedMealNames}
               </Text>
             </View>
-          )}
+          )} */}
 
           {/* Save Meal Button */}
           {selectedMeals.length > 0 && !todayEntry && (

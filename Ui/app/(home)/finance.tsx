@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,15 +13,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "@clerk/expo";
+import { useAuth } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
 import { useFinanceHistory, FinanceFilter, Transaction } from "./_hooks/useFinanceHistory";
+import { getMyMealGroup } from "@/api/meal.api";
 import { styles } from "@/assets/styles/home.styles";
 import { COLORS } from "@/constants/colors";
 import { BalanceCard } from "@/components/BalanceCard";
+import { getEntryUserId } from "./_utils/homeScreenHelpers";
 
 export default function FinanceScreen() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [avatarImageFailed, setAvatarImageFailed] = useState(false);
+  const [entries, setEntries] = useState<any[]>([]);
+  const hasLoadedEntriesRef = useRef(false);
 
   // Finance history hook
   const {
@@ -79,6 +85,84 @@ export default function FinanceScreen() {
     () => expenses.reduce((sum, e) => sum + e.amount, 0),
     [expenses]
   );
+
+  // Load meal entries for individual metrics
+  useEffect(() => {
+    if (!user?.id || !backendUser?._id || hasLoadedEntriesRef.current) return;
+
+    const loadEntries = async () => {
+      try {
+        const token = await getToken();
+        const dashboard = await getMyMealGroup(token);
+        setEntries(dashboard.entries || []);
+        hasLoadedEntriesRef.current = true;
+      } catch (error) {
+        console.log("Error loading entries:", error);
+      }
+    };
+
+    loadEntries();
+  }, [user?.id, backendUser?._id, getToken]);
+
+  // Calculate individual metrics
+  const userDeposits = useMemo(() => {
+    if (!backendUser?._id) return 0;
+    return deposits
+      .filter((d) => d.user?._id === backendUser._id || d.user === backendUser._id)
+      .reduce((sum, d) => sum + d.amount, 0);
+  }, [deposits, backendUser?._id]);
+
+  // Calculate total expenses for individual user for the current month
+  const userExpensesThisMonth = useMemo(() => {
+    if (!backendUser?._id) return 0;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    return expenses
+      .filter((e) => {
+        const expenseUserId = e.user?._id || e.user;
+        const [expenseYear, expenseMonth] = e.date.split("-").map(Number);
+        return (
+          expenseUserId === backendUser._id &&
+          expenseYear === currentYear &&
+          expenseMonth === currentMonth
+        );
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, backendUser?._id]);
+
+
+
+// Calculate total meals for the current month
+  const userMealsThisMonth = useMemo(() => {
+    if (!backendUser?._id) return 0;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    return entries
+      .filter((entry) => {
+        const entryUserId = getEntryUserId(entry);
+        const [entryYear, entryMonth] = entry.date.split("-").map(Number);
+
+        return (
+          entryUserId === backendUser._id &&
+          entryYear === currentYear &&
+          entryMonth === currentMonth
+        );
+      })
+      .reduce((sum, entry) => sum + entry.totalMeals, 0);
+  }, [entries, backendUser?._id]);
+
+  const mealCostThisMonth = useMemo(() => {
+    if (!mealGroup?.mealRate) return 0;
+    return userMealsThisMonth * mealGroup.mealRate;
+  }, [userMealsThisMonth, mealGroup?.mealRate]);
+
+  const individualDue = useMemo(() => {
+    return mealCostThisMonth - userDeposits;
+  }, [mealCostThisMonth, userDeposits]);
 
   const closeDepositModal = () => {
     setDepositModalVisible(false);
@@ -260,15 +344,47 @@ export default function FinanceScreen() {
 
           {/* Summary Tab */}
           {activeTab === "summary" && (
-            <View style={{ paddingHorizontal: 20 }}>
-              {backendUser && mealGroup && (
-                <BalanceCard
-                  summary={{
-                    balance: backendUser.balance,
-                    mealRate: mealGroup.mealRate,
-                    totalExpenses: totalExpenses,
-                  }}
-                />
+              <View style={{ paddingHorizontal: 10}}>
+                {backendUser && mealGroup && (
+                  <View
+                    style={{
+                        backgroundColor: COLORS.card,
+                        borderRadius: 12,
+                        padding: 12,
+                        marginBottom: 10,
+                        borderLeftWidth: 4,
+                        borderLeftColor: COLORS.primary,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                    }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        
+                      }}
+                    >
+                      <Text style={{ color: COLORS.textLight }}>Your Deposits</Text>
+                      <Text style={{ fontWeight: "600", color: COLORS.primary }}>
+                        {formatCurrency(userDeposits)}
+                      </Text>
+                    </View>                    
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        
+                      }}
+                    >
+                      <Text style={{ color: COLORS.textLight }}>User Due</Text>
+                      <Text style={{ fontWeight: "600", color: COLORS.expense }}>
+                        {formatCurrency(individualDue)}
+                      </Text>
+                    </View>
+                  </View>
               )}
 
               {/* Quick Stats */}
@@ -328,7 +444,7 @@ export default function FinanceScreen() {
 
           {/* Deposits Tab */}
           {activeTab === "deposits" && (
-            <View style={{ paddingHorizontal: 20 }}>
+            <View style={{ paddingHorizontal: 20 , paddingBottom: 100}}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
                 <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginBottom: 0 }}>Deposits</Text>
                 <TouchableOpacity
@@ -358,27 +474,35 @@ export default function FinanceScreen() {
                   renderItem={({ item }) => (
                     <View
                       style={{
-                        backgroundColor: COLORS.background,
-                        borderRadius: 8,
+                        backgroundColor: COLORS.card,
+                        borderRadius: 12,
                         padding: 12,
                         marginBottom: 10,
                         borderLeftWidth: 4,
                         borderLeftColor: COLORS.primary,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
                       }}
                     >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1}}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
                           <Text style={{ fontWeight: "600", color: COLORS.text }}>
                             {formatCurrency(item.amount)}
                           </Text>
+                          {item.user && (
+                          <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}>
+                            BY: {typeof item.user === "string" ? item.user : item.user.name}
+                          </Text>
+                          )}
                           <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 4 }}>
                             {formatDate(item.date)}
                           </Text>
-                          {item.user && (
-                            <Text style={{ fontSize: 12, color: COLORS.textLight, marginTop: 2 }}>
-                              By: {typeof item.user === "string" ? item.user : item.user.name}
-                            </Text>
-                          )}
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
+
                           {item.note && (
                             <Text style={{ fontSize: 11, color: COLORS.textLight, marginTop: 4 }}>
                               Note: {item.note}
@@ -395,7 +519,7 @@ export default function FinanceScreen() {
 
           {/* Expenses Tab */}
           {activeTab === "expenses" && (
-            <View style={{ paddingHorizontal: 20 }}>
+            <View style={{ paddingHorizontal: 20 , paddingBottom: 100}}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
                 <Text style={{ fontSize: 18, fontWeight: "600", color: COLORS.text, marginBottom: 0 }}>Expenses</Text>
                 {isManager && (
@@ -433,12 +557,17 @@ export default function FinanceScreen() {
                   renderItem={({ item }) => (
                     <View
                       style={{
-                        backgroundColor: COLORS.background,
-                        borderRadius: 8,
+                        backgroundColor: COLORS.card,
+                        borderRadius: 12,
                         padding: 12,
                         marginBottom: 10,
                         borderLeftWidth: 4,
-                        borderLeftColor: COLORS.expense,
+                        borderLeftColor: COLORS.primary,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
                       }}
                     >
                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -496,7 +625,7 @@ export default function FinanceScreen() {
               width: "85%",
             }}
           >
-            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 16 }}>
+            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 16, textAlign: "center" }}>
               Add Deposit
             </Text>
 
@@ -584,7 +713,7 @@ export default function FinanceScreen() {
               width: "85%",
             }}
           >
-            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 16 }}>
+            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 16, textAlign: "center" }}>
               Add Expense
             </Text>
 
