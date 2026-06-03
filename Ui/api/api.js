@@ -1,4 +1,5 @@
 import axios from "axios";
+import { retryWithBackoff } from "./retryLogic";
 
 // 1. Safely resolve the base URL by ensuring it's a real, non-empty string
 const getBaseURL = () => {
@@ -20,22 +21,54 @@ const API = axios.create({
   baseURL: resolvedURL,
   timeout:10000,
 });
-API.interceptors.request.use((config) => {
 
+// Store the original request config for potential retries
+API.interceptors.request.use((config) => {
   console.log("REQUEST METHOD:", config.method);
   console.log("REQUEST URL:", config.baseURL + config.url);
   console.log("REQUEST DATA:", config.data);
   console.log("REQUEST HEADERS:", config.headers);
+
+  // Store original config for retries
+  config.metadata = { startTime: Date.now() };
 
   return config;
 });
 
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     console.log("RESPONSE ERROR STATUS:", error.response?.status);
     console.log("RESPONSE ERROR DATA:", error.response?.data);
     console.log("RESPONSE ERROR MESSAGE:", error.message);
+
+    // Handle 429 (Rate Limit Exceeded) with retry logic
+    if (error.response?.status === 429 && error.config) {
+      // Check if already retried to prevent infinite loops
+      if (!error.config.__retryCount) {
+        error.config.__retryCount = 0;
+      }
+
+      if (error.config.__retryCount < 3) {
+        error.config.__retryCount++;
+
+        try {
+          // Create a function that retries the request with the same config
+          const retryRequest = () => {
+            return API.request(error.config);
+          };
+
+          // Attempt retry with exponential backoff
+          const response = await retryWithBackoff(retryRequest, error);
+          return response;
+        } catch (retryError) {
+          // All retries exhausted or different error occurred
+          console.log("RETRY_EXHAUSTED: All retries failed, returning error to caller");
+          return Promise.reject(retryError);
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );

@@ -1,4 +1,4 @@
-import { MealEntry } from "../types/homeScreen.types";
+import { MealEntry } from "../_types/homeScreen.types";
 
 export const getErrorMessage = (error: any) =>
   error?.response?.data?.message ||
@@ -10,14 +10,18 @@ export const getEntryUserId = (entry: MealEntry) =>
 
 export const getLocalDateKey = () => {
   const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-
-  return local.toISOString().slice(0, 10);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  
+  return `${year}-${month}-${day}`;
 };
 
 export const formatNoteDate = (dateValue: string) => {
   const date = new Date(dateValue);
 
+  // Format: "MM/DD/YYYY and current time in 12-hour format with AM/PM"
+  
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",

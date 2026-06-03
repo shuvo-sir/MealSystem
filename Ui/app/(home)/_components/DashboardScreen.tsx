@@ -31,6 +31,7 @@ interface DashboardScreenProps {
   todayEntry: MealEntry | undefined;
   isActionLoading: boolean;
   refreshing: boolean;
+  isRetrying: boolean;
   errorMessage: string | null;
   onMealSelect: (mealId: number) => void;
   onSaveMealEntry: () => void;
@@ -38,6 +39,7 @@ interface DashboardScreenProps {
   onAddNote: () => void;
   onDeleteNote: (noteId: string) => void;
   onRefresh: () => void;
+  onRetry: () => void;
   avatarImageFailed: boolean;
   onAvatarImageFailed: (failed: boolean) => void;
   userName: string;
@@ -60,6 +62,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   todayEntry,
   isActionLoading,
   refreshing,
+  isRetrying,
   errorMessage,
   onMealSelect,
   onSaveMealEntry,
@@ -67,6 +70,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onAddNote,
   onDeleteNote,
   onRefresh,
+  onRetry,
   avatarImageFailed,
   onAvatarImageFailed,
   userName,
@@ -93,9 +97,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           contentContainerStyle={styles.content}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
+              refreshing={refreshing || isRetrying}
               onRefresh={onRefresh}
               tintColor={COLORS.primary}
+              enabled={!isRetrying}
             />
           }
         >
@@ -133,7 +138,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* Error Card */}
           {errorMessage && (
             <View style={styles.errorCard}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+              {isRetrying ? (
+                <View style={{ marginLeft: 12, justifyContent: "center" }}>
+                  <ActivityIndicator size="small" color={COLORS.expense || "#ff6b6b"} />
+                </View>
+              ) : (
+                <TouchableOpacity onPress={onRetry} style={{ marginLeft: 12 }}>
+                  <Ionicons name="refresh" size={20} color={COLORS.expense || "#ff6b6b"} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -152,6 +168,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   balance: backendUser?.balance || 0,
                   mealRate: mealGroup.mealRate || 0,
                   totalExpenses: mealGroup.totalExpense || 0,
+                  totalDeposit: mealGroup.totalDeposit || 0,
                 }}
               />
 
@@ -195,7 +212,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </>
           )}
 
-          {/* Meal Selection Section */}}
+          {/* Meal Selection Section */}
           <Text style={styles.mealSectionTitle}>Add Your Meal</Text>
           <View style={styles.mealCardsContainer}>
             {meals.map((meal) => {
@@ -229,13 +246,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
 
           {/* Selected Meals Display */}
-          {selectedMeals.length > 0 && (
+          {/* {selectedMeals.length > 0 && (
             <View style={styles.selectedMealsContainer}>
               <Text style={styles.selectedMealsText}>
                 Selected: {selectedMealNames}
               </Text>
             </View>
-          )}
+          )} */}
 
           {/* Save Meal Button */}
           {selectedMeals.length > 0 && !todayEntry && (
