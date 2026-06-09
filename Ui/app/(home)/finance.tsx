@@ -19,8 +19,7 @@ import { useFinanceHistory, FinanceFilter, Transaction } from "./_hooks/useFinan
 import { getMyMealGroup } from "@/api/meal.api";
 import { styles } from "@/assets/styles/home.styles";
 import { COLORS } from "@/constants/colors";
-import { BalanceCard } from "@/components/BalanceCard";
-import { getEntryUserId } from "./_utils/homeScreenHelpers";
+
 
 export default function FinanceScreen() {
   const { user } = useUser();
@@ -104,14 +103,7 @@ export default function FinanceScreen() {
     loadEntries();
   }, [user?.id, backendUser?._id, getToken]);
 
-  // Calculate individual metrics
-  const userDeposits = useMemo(() => {
-    if (!backendUser?._id) return 0;
-    return deposits
-      .filter((d) => d.user?._id === backendUser._id || d.user === backendUser._id)
-      .reduce((sum, d) => sum + d.amount, 0);
-  }, [deposits, backendUser?._id]);
-
+ 
   // Calculate total expenses for individual user for the current month
   const userExpensesThisMonth = useMemo(() => {
     if (!backendUser?._id) return 0;
@@ -134,35 +126,60 @@ export default function FinanceScreen() {
 
 
 // Calculate total meals for the current month
-  const userMealsThisMonth = useMemo(() => {
-    if (!backendUser?._id) return 0;
+ const userMealsThisMonth = useMemo(() => {
+  if (!backendUser?._id) return 0;
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
-    return entries
-      .filter((entry) => {
-        const entryUserId = getEntryUserId(entry);
-        const [entryYear, entryMonth] = entry.date.split("-").map(Number);
+  let total = 0;
 
-        return (
-          entryUserId === backendUser._id &&
-          entryYear === currentYear &&
-          entryMonth === currentMonth
-        );
-      })
-      .reduce((sum, entry) => sum + entry.totalMeals, 0);
-  }, [entries, backendUser?._id]);
+  for (const entry of entries) {
+    const [entryYear, entryMonth] = entry.date.split("-").map(Number);
 
+    if (
+      entryYear === year &&
+      entryMonth === month &&
+      (entry.user?._id === backendUser._id || entry.user === backendUser._id)
+    ) {
+      total += entry.totalMeals;
+    }
+  }
+
+  return total;
+}, [entries, backendUser?._id]);
+
+
+// Calculate meal cost for the current month
   const mealCostThisMonth = useMemo(() => {
     if (!mealGroup?.mealRate) return 0;
     return userMealsThisMonth * mealGroup.mealRate;
   }, [userMealsThisMonth, mealGroup?.mealRate]);
 
-  const individualDue = useMemo(() => {
-    return mealCostThisMonth - userDeposits;
-  }, [mealCostThisMonth, userDeposits]);
+
+ const userDeposits = useMemo(() => {
+  if (!backendUser?._id) return 0;
+
+  return deposits
+    .filter(
+      (d) =>
+        d.user?._id === backendUser._id ||
+        d.user === backendUser._id
+    )
+    .reduce((sum, d) => sum + d.amount, 0);
+}, [deposits, backendUser?._id]);
+
+const userBalance = useMemo(() => {
+  const balance = userDeposits - mealCostThisMonth;
+
+  return {
+    amount: Math.abs(balance),
+    isDue: balance < 0,
+    label: balance < 0 ? "Amount Due" : "Available Balance",
+    balance,
+  };
+}, [userDeposits, mealCostThisMonth]);
 
   const closeDepositModal = () => {
     setDepositModalVisible(false);
@@ -348,40 +365,84 @@ export default function FinanceScreen() {
                 {backendUser && mealGroup && (
                   <View
                     style={{
-                        backgroundColor: COLORS.card,
-                        borderRadius: 12,
-                        padding: 12,
-                        marginBottom: 10,
-                        borderLeftWidth: 4,
-                        borderLeftColor: COLORS.primary,
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                    }}>
+                      backgroundColor: COLORS.card,
+                      borderRadius: 16,
+                      padding: 20,
+                      marginBottom: 12,
+                      borderLeftWidth: 5,
+                      borderLeftColor: COLORS.primary,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 6,
+                      elevation: 4,
+                    }}
+                  >
+                    {/* Top Labels */}
                     <View
                       style={{
                         flexDirection: "row",
                         justifyContent: "space-between",
-                        
+                        alignItems: "center",
                       }}
                     >
-                      <Text style={{ color: COLORS.textLight }}>Your Deposits</Text>
-                      <Text style={{ fontWeight: "600", color: COLORS.primary }}>
-                        {formatCurrency(userDeposits)}
+                      <View style={{ gap: 4 }}>
+                        <Text style={{ color: COLORS.textLight, fontSize: 12 }}>Your Deposits</Text>
+                        <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.primary }}>
+                          {formatCurrency(userDeposits)}
+                        </Text>
+                      </View>
+
+
+                      <View
+                        style={{
+                          height: 32,
+                          width: 1,
+                          backgroundColor: COLORS.border || "#E0E0E0",
+                        }}
+                      />
+                      
+                      <View style={{ gap: 4 }}>
+                        <Text style={{ color: COLORS.textLight, fontSize: 12 }}>
+                        {userBalance.label}
                       </Text>
-                    </View>                    
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: "700",
+                          color:
+                            userBalance.balance >= 0
+                              ? COLORS.income // green
+                              : COLORS.expense, // red
+                        }}
+                      >
+                        {formatCurrency(Math.abs(userBalance.amount))}
+                      </Text>
+                      </View>
+                    </View>
+
+
+                    {/* Status Badge */}
                     <View
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        
+                        marginTop: 10,
+                        alignSelf: "flex-start",
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 20,
+                        backgroundColor:
+                          userBalance.balance >= 0 ? "#dcfce7" : "#fee2e2",
                       }}
                     >
-                      <Text style={{ color: COLORS.textLight }}>User Due</Text>
-                      <Text style={{ fontWeight: "600", color: COLORS.expense }}>
-                        {formatCurrency(individualDue)}
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "600",
+                          color:
+                            userBalance.balance >= 0 ? COLORS.income : COLORS.expense,
+                        }}
+                      >
+                        {userBalance.balance >= 0 ? "Credit" : "Due"}
                       </Text>
                     </View>
                   </View>

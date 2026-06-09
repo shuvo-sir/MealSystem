@@ -222,7 +222,7 @@ const THEMES = {
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.midnightBerry;
+export const COLORS = THEMES.garden;
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {

@@ -344,13 +344,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </View>
 
               {/* Selected Meals Display */}
-              {selectedMeals.length > 0 && (
+              {/* {selectedMeals.length > 0 && (
                 <View style={styles.selectedMealsContainer}>
                   <Text style={styles.selectedMealsText}>
                     Selected: {selectedMealNames}
                   </Text>
                 </View>
-              )}
+              )} */}
 
               {/* Save Meal Button */}
               {selectedMeals.length > 0 && !todayEntry && (
@@ -372,6 +372,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               )}
             </>
           )}
+          
+
+
+
 
           {/* Cooking People Section */}
           <TouchableOpacity
