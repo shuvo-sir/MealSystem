@@ -262,25 +262,36 @@ export default function SignInScreen() {
                 )}
 
                 <View style={authStyles.fieldContainer}>
-                  <Text style={authStyles.label}>Verification Code</Text>
-                  <TextInput
-                    style={[
-                      authStyles.input,
-                      focusedField === "code" && authStyles.inputFocused,
-                      codeError && authStyles.inputError,
-                    ]}
-                    placeholder="Enter 6-digit code"
-                    placeholderTextColor={COLORS.textLight}
-                    value={code}
-                    onChangeText={handleCodeChange}
-                    onFocus={() => setFocusedField("code")}
-                    onBlur={() => setFocusedField(null)}
-                    keyboardType="number-pad"
-                    maxLength={8}
-                    editable={!isLoading}
+                                <View style={authStyles.inputGroup}>
+                <Text style={authStyles.label}>Verification Code</Text>
+                <View style={[
+                  authStyles.inputContainer,
+                  focusedField === "code" && authStyles.inputFocused,
+                  codeError && authStyles.inputError,
+                  ]}
+                >
+                  <Ionicons style={authStyles.inputIcon}
+                    name='mail-outline'
+                    size={20}
+                    color={COLORS.textLight}
                   />
-                  {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
-                </View>
+              <TextInput
+                style={[
+                  authStyles.input,
+                ]}
+                placeholder="Enter 6-digit code"
+                placeholderTextColor={COLORS.textLight}
+                value={code}
+                onChangeText={handleCodeChange}
+                onFocus={() => setFocusedField("code")}
+                onBlur={() => setFocusedField(null)}
+                keyboardType="number-pad"
+                maxLength={8}
+                editable={!isLoading}
+              />
+              {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
+            </View>
+            </View>
 
                 <Pressable
                   style={[
@@ -332,6 +343,7 @@ export default function SignInScreen() {
                 >
                   <Text style={authStyles.buttonSecondaryText}>Start Over</Text>
                 </Pressable>
+              </View>
               </>
             ) : (
 

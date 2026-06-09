@@ -34,7 +34,7 @@ export const BalanceCard = ({ summary }: BalanceCardProps) => {
               </Text>
           </View>
 
-            <View style={[{ alignItems: "center"}, styles.statDivider]} />
+            {/* <View style={[{ alignItems: "center"}, styles.statDivider]} />
             
           <View style={styles.balanceStatItem}>
             <Text style={styles.balanceStatLabel}>Net Balance</Text>
@@ -46,7 +46,7 @@ export const BalanceCard = ({ summary }: BalanceCardProps) => {
             >
               BDT {money(netBalance)}
             </Text>
-          </View>
+          </View> */}
         </View>
 
         {/* Second Row: Meal Rate & Total Expenses */}

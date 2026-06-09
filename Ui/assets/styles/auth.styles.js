@@ -45,7 +45,7 @@ export const authStyles = StyleSheet.create({
     height: width * 0.65,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontFamily: "JetBrainsMono-Medium",
     fontWeight: 700,
     color: COLORS.primary,
