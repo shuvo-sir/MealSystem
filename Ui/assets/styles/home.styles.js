@@ -84,7 +84,9 @@ export const styles = StyleSheet.create({
     balanceCard: {
         backgroundColor: COLORS.card,
         borderRadius: 20,
-        padding: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+        padding: 18,
         marginBottom: 20,
         shadowColor: COLORS.shadow,
         shadowOffset: {
@@ -125,13 +127,13 @@ export const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   balanceStatLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.textLight,
     marginBottom: 4,
   },
   balanceStatAmount: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
   mealSectionTitle: {
     fontSize: 25,
@@ -472,8 +474,10 @@ export const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 22,
-    color: COLORS.text,
+    color: COLORS.primary,
     fontWeight: "800",
+    marginBottom: 15,
+    textAlign: "center",
   },
   groupMetaRow: {
     flexDirection: "row",
