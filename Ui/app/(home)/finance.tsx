@@ -234,6 +234,83 @@ const userBalance = useMemo(() => {
     });
   };
 
+  const memberSummaries = useMemo(() => {
+  if (!backendUser?._id) return [];
+  if (!isManager) return [];
+
+  const mealRate = mealGroup?.mealRate || 0;
+
+  // USER MAP (fast lookup)
+  const mealMap = new Map<string, number>();
+  const depositMap = new Map<string, number>();
+  const userInfoMap = new Map<string, any>();
+
+  // ----------------------
+  // 1. Build Meals
+  // ----------------------
+  for (const entry of entries) {
+    const userId = entry.user?._id || entry.user;
+    if (!userId) continue;
+
+    mealMap.set(
+      userId,
+      (mealMap.get(userId) || 0) + (entry.totalMeals || 0)
+    );
+
+    if (!userInfoMap.has(userId)) {
+      userInfoMap.set(userId, entry.user);
+    }
+  }
+
+  // ----------------------
+  // 2. Build Deposits
+  // ----------------------
+  for (const dep of deposits) {
+    const userId = dep.user?._id || dep.user;
+    if (!userId) continue;
+
+    depositMap.set(
+      userId,
+      (depositMap.get(userId) || 0) + (dep.amount || 0)
+    );
+
+    if (!userInfoMap.has(userId)) {
+      userInfoMap.set(userId, dep.user);
+    }
+  }
+
+  // ----------------------
+  // 3. Merge into final list
+  // ----------------------
+  const allUserIds = new Set([
+    ...mealMap.keys(),
+    ...depositMap.keys(),
+  ]);
+
+  return Array.from(allUserIds).map((userId) => {
+    const totalMeals = mealMap.get(userId) || 0;
+    const totalDeposits = depositMap.get(userId) || 0;
+
+    const mealCost = totalMeals * mealRate;
+    const balance = totalDeposits - mealCost;
+
+    const user = userInfoMap.get(userId);
+
+    return {
+      userId,
+      name:
+        user?.name ||
+        user?.fullName ||
+        user?.email ||
+        "Unknown User",
+      totalMeals,
+      totalDeposits,
+      mealCost,
+      balance,
+    };
+  });
+}, [isManager, entries, deposits, mealGroup?.mealRate, backendUser?._id]);
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -361,7 +438,7 @@ const userBalance = useMemo(() => {
 
           {/* Summary Tab */}
           {activeTab === "summary" && (
-              <View style={{ paddingHorizontal: 10}}>
+              <View style={{ paddingHorizontal: 10, paddingBottom: 100 }}>
                 {backendUser && mealGroup && (
                   <View
                     style={{
@@ -447,9 +524,175 @@ const userBalance = useMemo(() => {
                     </View>
                   </View>
               )}
+              {isManager && (
+                <View style={{ marginTop: 20, paddingHorizontal: 10 }}>
+                  
+                  {/* TITLE */}
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      marginBottom: 10,
+                      color: COLORS.text,
+                    }}
+                  >
+                    All Members Overview
+                  </Text>
+
+                  {/* HEADER */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      paddingVertical: 10,
+                      borderBottomWidth: 2,
+                      borderBottomColor: COLORS.border,
+                      backgroundColor: COLORS.background,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
+                      Name
+                    </Text>
+
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
+                      Deposits
+                    </Text>
+
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
+                      Meals
+                    </Text>
+
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
+                      Cost
+                    </Text>
+
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
+                      Balance
+                    </Text>
+                  </View>
+
+                  {/* ROWS */}
+                  {memberSummaries.map((member) => (
+                    <View
+                      key={member.userId}
+                      style={{
+                        flexDirection: "row",
+                        paddingVertical: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: COLORS.border,
+                        alignItems: "center",
+                      }}
+                    >
+                      {/* NAME */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          color: COLORS.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        {member.name}
+                      </Text>
+
+                      {/* DEPOSITS */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          color: COLORS.primary,
+                          textAlign: "center",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {member.totalDeposits.toFixed(0)}
+                      </Text>
+
+                      {/* MEALS */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          color: COLORS.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        {member.totalMeals}
+                      </Text>
+
+                      {/* COST */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          color: COLORS.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        {member.mealCost.toFixed(0)}
+                      </Text>
+
+                      {/* BALANCE */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          fontWeight: "700",
+                          textAlign: "center",
+                          color:
+                            member.balance >= 0
+                              ? COLORS.income
+                              : COLORS.expense,
+                        }}
+                      >
+                        {member.balance.toFixed(0)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {/* Quick Stats */}
-              <View
+              {/* <View
                 style={{
                   marginTop: 16,
                   backgroundColor: COLORS.background,
@@ -499,7 +742,7 @@ const userBalance = useMemo(() => {
                     {formatCurrency(totalDeposits - totalExpenses)}
                   </Text>
                 </View>
-              </View>
+              </View> */}
             </View>
           )}
 

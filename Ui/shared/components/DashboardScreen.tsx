@@ -111,42 +111,42 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   }, [entries]);
 
   // Get list of people cooking for a specific meal
-  const getMealPeople = useMemo(() => {
-    return (mealId: number) => {
-      const mealKey = mealId === 2 ? "lunch" : "dinner";
-      const cookingEntries = entries.filter((entry) => {
-        const mealValue = entry[mealKey as keyof MealEntry];
-        return mealValue && (mealValue as number) > 0;
-      });
+  // const getMealPeople = useMemo(() => {
+  //   return (mealId: number) => {
+  //     const mealKey = mealId === 2 ? "lunch" : "dinner";
+  //     const cookingEntries = entries.filter((entry) => {
+  //       const mealValue = entry[mealKey as keyof MealEntry];
+  //       return mealValue && (mealValue as number) > 0;
+  //     });
 
-      return cookingEntries
-        .map((entry) => {
-          const member = members.find((m) => m._id === entry.userId);
-          return member?.firstName || "Unknown";
-        })
-        .filter(Boolean);
-    };
-  }, [entries, members]);
+  //     return cookingEntries
+  //       .map((entry) => {
+  //         const member = members.find((m) => m._id === entry.userId);
+  //         return member?.firstName || "Unknown";
+  //       })
+  //       .filter(Boolean);
+  //   };
+  // }, [entries, members]);
 
-  const toggleCookingPeople = () => {
-    setExpandedCookingPeople(!expandedCookingPeople);
-  };
+  // const toggleCookingPeople = () => {
+  //   setExpandedCookingPeople(!expandedCookingPeople);
+  // };
 
-  // Get all people cooking today
-  const getAllCookingPeople = useMemo(() => {
-    const cookingEntries = entries.filter((entry) => {
-      const lunch = entry.lunch && (entry.lunch as number) > 0;
-      const dinner = entry.dinner && (entry.dinner as number) > 0;
-      return lunch || dinner;
-    });
+  // // Get all people cooking today
+  // const getAllCookingPeople = useMemo(() => {
+  //   const cookingEntries = entries.filter((entry) => {
+  //     const lunch = entry.lunch && (entry.lunch as number) > 0;
+  //     const dinner = entry.dinner && (entry.dinner as number) > 0;
+  //     return lunch || dinner;
+  //   });
 
-    return cookingEntries
-      .map((entry) => {
-        const member = members.find((m) => m._id === entry.userId);
-        return member?.firstName || "Unknown";
-      })
-      .filter(Boolean);
-  }, [entries, members]);
+  //   return cookingEntries
+  //     .map((entry) => {
+  //       const member = members.find((m) => m._id === entry.userId);
+  //       return member?.firstName || "Unknown";
+  //     })
+  //     .filter(Boolean);
+  // }, [entries, members]);
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
@@ -188,10 +188,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => alert("Add Money")}
+                onPress={() => alert("Leave group functionality coming soon!")}
               >
-                <Ionicons name="add-circle" size={24} color="#fff" />
-                <Text style={styles.addButtonText}>Add</Text>
+                <Ionicons name="exit-outline" size={24} color="#fff" />
+                <Text style={styles.addButtonText}>Leave</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -203,16 +203,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </View>
           )}
 
-          {/* Group Card */}
+          {/* Group Card
           {mealGroup && (
             <View style={styles.groupCard}>
               <Text style={styles.groupName}>{mealGroup.groupName}</Text>
             </View>
-          )}
+          )} */}
 
           {/* Balance Card */}
           {mealGroup && (
             <BalanceCard
+              groupName={mealGroup.groupName}
               summary={{
                 balance: mealGroup.totalDeposit || 0,
                 mealRate: mealGroup.mealRate || 0,
@@ -378,7 +379,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
 
           {/* Cooking People Section */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={{
               backgroundColor: COLORS.border,
               borderRadius: 12,
@@ -414,11 +415,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               name={expandedCookingPeople ? "chevron-up" : "chevron-down"}
               size={20}
               color={COLORS.primary}
-            />
-          </TouchableOpacity>
+            /> */}
+          {/* </TouchableOpacity>
 
           {/* Cooking People Details */}
-          {expandedCookingPeople && (
+          {/* {expandedCookingPeople && (
             <View style={{
               backgroundColor: COLORS.border,
               borderRadius: 12,
@@ -468,7 +469,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </Text>
               )}
             </View>
-          )}
+          )} */}
 
           {/* Group Notes Section */}
           <Text style={styles.mealSectionTitle}>Group Notes</Text>

@@ -164,6 +164,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {mealGroup && (
             <>
               <BalanceCard
+                groupName={mealGroup.groupName}
                 summary={{
                   balance: backendUser?.balance || 0,
                   mealRate: mealGroup.mealRate || 0,
