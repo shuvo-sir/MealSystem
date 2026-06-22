@@ -36,6 +36,9 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
 
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
+
   // Focus states
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -289,8 +292,8 @@ export default function SignInScreen() {
                 maxLength={8}
                 editable={!isLoading}
               />
-              {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
             </View>
+            {codeError && <Text style={authStyles.errorText}>{codeError}</Text>}
             </View>
 
                 <Pressable
@@ -394,8 +397,8 @@ export default function SignInScreen() {
                     autoCorrect={false}
                     editable={!isLoading}
                   />
-                  {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
                   </View>
+                  {emailError && <Text style={authStyles.errorText}>{emailError}</Text>}
                   </View>
 
                     {/* Password */}
@@ -421,11 +424,21 @@ export default function SignInScreen() {
                     onChangeText={handlePasswordChange}
                     onFocus={() => setFocusedField("password")}
                     onBlur={() => setFocusedField(null)}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     editable={!isLoading}
                   />
-                  {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
+                  <Pressable 
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={authStyles.eyeIcon}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                      size={20}
+                      color={COLORS.textLight}
+                    />
+                  </Pressable>
                   </View>
+                  {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
                   </View>
                 <Pressable
                   style={[

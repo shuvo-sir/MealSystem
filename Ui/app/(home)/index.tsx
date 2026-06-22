@@ -4,10 +4,13 @@ import { LoadingScreen } from "@/shared/components/LoadingScreen";
 import { NoGroupScreen } from "@/shared/components/NoGroupScreen";
 import { DashboardScreen } from "@/shared/components/DashboardScreen";
 import { useDashboard } from "@/shared/hooks/useDashboard";
+import { joinMeal } from "@/api/meal.api";
+import { useAuth } from "@clerk/expo";
 import { GroupAction } from "@/shared/types/homeScreen.types";
 
 export default function HomeScreen() {
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   // Dashboard hook manages all data state and actions
   const {
@@ -28,6 +31,7 @@ export default function HomeScreen() {
     handleAddNote,
     handleDeleteNote,
     handleRetry,
+    handleLeaveGroup,
   } = useDashboard();
 
   // Component-level state for form fields and UI
@@ -89,6 +93,11 @@ export default function HomeScreen() {
     setNoteMessage("");
   };
 
+  const handleJoinGroupAction = async (data: { inviteCode: string }) => {
+    const token = await getToken();
+    return joinMeal(data, token);
+  };
+
   // Show loading screen
   if (isLoading) {
     return <LoadingScreen />;
@@ -138,6 +147,8 @@ export default function HomeScreen() {
       avatarImageFailed={avatarImageFailed}
       onAvatarImageFailed={setAvatarImageFailed}
       userName={userName}
+      onLeaveGroup={handleLeaveGroup}
+      onJoinGroup={handleJoinGroupAction}
     />
   );
 }

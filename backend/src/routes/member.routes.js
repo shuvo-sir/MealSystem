@@ -4,6 +4,7 @@ import {
   getPendingRequests,
   acceptMember,
   rejectMember,
+  leaveGroup,
 } from "../controllers/member.controller.js";
 
 const router = express.Router();
@@ -25,5 +26,7 @@ router.patch(
   "/reject/:requestId",
   rejectMember
 );
+
+router.post("/leave", leaveGroup);
 
 export default router;

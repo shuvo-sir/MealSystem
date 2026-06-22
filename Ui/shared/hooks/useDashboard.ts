@@ -6,6 +6,7 @@ import {
   createMealGroup,
   getMyMealGroup,
   joinMeal,
+  leaveMealGroup,
 } from "@/api/meal.api";
 import {
   addGroupNote,
@@ -297,6 +298,39 @@ export const useDashboard = () => {
     }
   }, []);
 
+  const handleLeaveGroup = useCallback(async () => {
+    if (!mealGroup) {
+      Alert.alert("Error", "No group to leave");
+      return;
+    }
+
+    setActionLoading(true);
+
+    try {
+      const token = await getToken();
+      console.log(`[handleLeaveGroup] Leaving group: ${mealGroup._id}`);
+
+      await leaveMealGroup(token);
+
+      console.log(`[handleLeaveGroup] Successfully left group`);
+
+      // Clear the group data
+      setMealGroup(null);
+      setMembers([]);
+      setEntries([]);
+      setNotesList([]);
+      setBackendUser((prev) => prev ? { ...prev } : null);
+
+      // Reload dashboard to refresh UI
+      await loadDashboard(false);
+    } catch (error) {
+      console.log(`[handleLeaveGroup] Error:`, error);
+      throw error;
+    } finally {
+      setActionLoading(false);
+    }
+  }, [mealGroup, getToken, loadDashboard]);
+
   return {
     // State
     backendUser,
@@ -319,5 +353,6 @@ export const useDashboard = () => {
     handleAddNote,
     handleDeleteNote,
     handleRetry,
+    handleLeaveGroup,
   };
 };

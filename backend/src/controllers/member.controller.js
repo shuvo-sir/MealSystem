@@ -174,3 +174,68 @@ export const rejectMember = async (req, res) => {
     });
   }
 };
+
+
+export const leaveGroup = async (req, res) => {
+  try {
+    const clerkId = req.auth.userId;
+
+    console.log(`[leaveGroup] Starting leave process for clerkId: ${clerkId}`);
+
+    const user = await User.findOne({ clerkId });
+
+    if (!user) {
+      console.log(`[leaveGroup] User not found for clerkId: ${clerkId}`);
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    if (!user.mealGroup) {
+      console.log(`[leaveGroup] User is not in any meal group`);
+      return res.status(400).json({
+        message: "You are not in any meal group",
+      });
+    }
+
+    const group = await MealGroup.findById(user.mealGroup);
+
+    if (!group) {
+      console.log(`[leaveGroup] Meal group not found: ${user.mealGroup}`);
+      return res.status(404).json({
+        message: "Meal group not found",
+      });
+    }
+
+    const groupName = group.groupName;
+
+    // Remove user from group's members array
+    group.members = group.members.filter(
+      (memberId) => memberId.toString() !== user._id.toString()
+    );
+    await group.save();
+
+    // Clear user's mealGroup field
+    user.mealGroup = null;
+    await user.save();
+
+    // Clear any pending join requests for this user
+    await JoinRequest.updateMany(
+      { user: user._id, mealGroup: group._id },
+      { status: "rejected" }
+    );
+
+    console.log(`[leaveGroup] User ${user._id} successfully left group ${group._id}`);
+
+    res.json({
+      success: true,
+      message: `You have left the group "${groupName}"`,
+      groupName,
+    });
+  } catch (error) {
+    console.log(`[leaveGroup] Error: ${error.message}`);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};

@@ -160,17 +160,29 @@ const crispMintTheme = {
   shadow: "#000000",
 };
 
-
-const deepHarvestTheme = {
-  primary: "#1B4332",     // Rich Forest Green
-  background: "#e6fff4",  // Pure White for maximum "crisp"
+const customTheme = {
+  primary: "#013e37",     // Rich Forest Green
+  background: "#ffefb3",  // Pure White for maximum "crisp"
   text: "#081C15",        // Near Black Green
   border: "#D8F3DC",      // Very light mint border
   white: "#FFFFFF",
-  textLight: "#52B788",   // Medium Seafoam
+  textLight: "#cfd7d3",   // Medium Seafoam
   expense: "#E63946",     // Sharp Red
   income: "#2D6A4F",      // Forest Green
-  card: "#F8F9FA",        // Off-white cards for depth
+  card: "#f2f2f2",        // Off-white cards for depth
+  shadow: "#000000",
+};
+
+const deepHarvestTheme = {
+  primary: "#1B4332",     // Rich Forest Green
+  background: "#64aa8c",  // Pure White for maximum "crisp"
+  text: "#1B3022",        // Dark Forest
+  border: "#ffefb3",      // Sage Border
+  white: "#FFFFFF",
+  textLight: "#757575",
+  expense: "#E63946",     // Sharp Red
+  income: "#2D6A4F",      // Forest Green
+  card: "#f2f2f2",        // Off-white cards for depth
   shadow: "#000000",
 };
 
@@ -219,10 +231,11 @@ const THEMES = {
   deepHarvest: deepHarvestTheme, // selected theme
   spicedCacao: spicedCacaoTheme,
   midnightBerry: midnightBerryTheme,
+  custom: customTheme,
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.garden;
+export const COLORS = THEMES.garden; // default theme is custom
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {

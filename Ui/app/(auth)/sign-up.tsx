@@ -39,6 +39,9 @@ export default function SignUpScreen() {
   const [code, setCode] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
+
   // Focus states
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -530,11 +533,21 @@ const handleVerifySubmit = async () => {
               onChangeText={handlePasswordChange}
               onFocus={() => setFocusedField("password")}
               onBlur={() => setFocusedField(null)}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               editable={!isLoading}
             />
-            {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
+            <Pressable 
+              onPress={() => setShowPassword(!showPassword)}
+              style={authStyles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={20}
+                color={COLORS.textLight}
+              />
+            </Pressable>
             </View>
+            {passwordError && <Text style={authStyles.errorText}>{passwordError}</Text>}
             </View>
             {/* Password Strength Indicator */}
             {password && (
