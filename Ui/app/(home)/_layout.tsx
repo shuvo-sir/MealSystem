@@ -1,11 +1,19 @@
 import { useAuth } from "@clerk/expo";
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, Dimensions, useWindowDimensions } from "react-native";
 import { COLORS } from "../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeRoutesLayout() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+
+  // Responsive tab bar calculations
+  const tabBarHeight = Math.round(screenHeight * 0.08); // ~8% of screen height
+  const tabBarBottom = Math.round(screenHeight * 0.035); // ~3.5% from bottom
+  const tabBarMarginHorizontal = Math.round(screenWidth * 0.05); // ~5% of screen width
+  const tabBarBorderRadius = Math.round(screenHeight * 0.025); // ~2.5% of screen height
+  const tabBarIconSize = Math.round(24 * (screenWidth / 375)); // Scale based on 375px baseline (iPhone 8)
 
   if (!isLoaded) {
     return (
@@ -22,7 +30,6 @@ export default function HomeRoutesLayout() {
     );
   }
 
-  // If user is not signed in, redirect to sign-in
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
   }
@@ -33,27 +40,39 @@ export default function HomeRoutesLayout() {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.border,
+
+        // FIX: Responsive tab bar styling for production builds
         tabBarStyle: {
           position: "absolute",
-          height: 60,
-          marginBottom: 35,
-          marginHorizontal: 20,
-          borderRadius: 25,
-          backgroundColor: COLORS.card,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 5 },
+          bottom: tabBarBottom,
+          marginHorizontal: tabBarMarginHorizontal,
+          height: tabBarHeight,
+          borderRadius: tabBarBorderRadius,
+          backgroundColor: COLORS.white,
+          elevation: 8,
+          borderTopWidth: 0,
+          paddingBottom: Math.round(tabBarHeight * 0.15),
+          // shadow the tab bar for better visibility
+          shadowColor: COLORS.primary,
+          shadowOffset: {
+            width: 0,
+            height: 3,
+          },
           shadowOpacity: 0.1,
-          shadowRadius: 10,
-          elevation: 5,
-          paddingHorizontal: 6,
-          borderWidth: 1,
-          borderColor: "rgba(255, 255, 255, 0.2)",
-          overflow: "hidden",
+          shadowRadius: 4,
+          overflow: 'hidden', // Prevent icon overflow
         },
+
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: Math.round(10 * (screenWidth / 375)),
           fontWeight: "500",
-          marginTop: 4,
+          marginTop: Math.round(3 * (screenWidth / 375)),
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingVertical: Math.round(4 * (screenWidth / 375)),
         },
       }}
     >
@@ -61,8 +80,8 @@ export default function HomeRoutesLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home" size={tabBarIconSize} color={color} />
           ),
         }}
       />
@@ -71,8 +90,8 @@ export default function HomeRoutesLayout() {
         name="my_meal"
         options={{
           title: "My Meal",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="fast-food" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="fast-food" size={tabBarIconSize} color={color} />
           ),
         }}
       />
@@ -81,8 +100,8 @@ export default function HomeRoutesLayout() {
         name="finance"
         options={{
           title: "Finance",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="wallet" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="wallet" size={tabBarIconSize} color={color} />
           ),
         }}
       />
@@ -91,12 +110,11 @@ export default function HomeRoutesLayout() {
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings" size={tabBarIconSize} color={color} />
           ),
         }}
       />
-
     </Tabs>
   );
 }

@@ -93,6 +93,18 @@ export const rejectMember =
 };
 
 
+// leave meal group
+export const leaveMealGroup = async (token) => {
+  const response = await API.post(
+    "/member/leave",
+    {},
+    authConfig(token)
+  );
+
+  return response.data;
+};
+
+
 // get meal history
 export const getMealHistory = async (
   groupId,

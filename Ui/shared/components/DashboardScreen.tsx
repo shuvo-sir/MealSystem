@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,6 +19,8 @@ import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
 import { BackendUser, MealEntry, MealGroup, GroupNote } from "../types/homeScreen.types";
 import { formatNoteDate } from "../utils/homeScreenHelpers";
+import { LeaveGroupModal } from "@/app/(home)/_components/settings/modals/LeaveGroupModal";
+import { JoinAnotherGroupModal } from "@/app/(home)/_components/settings/modals/JoinAnotherGroupModal";
 
 interface DashboardScreenProps {
   backendUser: BackendUser | null;
@@ -41,6 +43,8 @@ interface DashboardScreenProps {
   avatarImageFailed: boolean;
   onAvatarImageFailed: (failed: boolean) => void;
   userName: string;
+  onLeaveGroup: () => Promise<void>;
+  onJoinGroup: (data: { inviteCode: string }) => Promise<void>;
 }
 
 const meals = [
@@ -69,6 +73,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   avatarImageFailed,
   onAvatarImageFailed,
   userName,
+  onLeaveGroup,
+  onJoinGroup,
 }) => {
   const { user } = useUser();
   const [expandedCookingPeople, setExpandedCookingPeople] = React.useState(true);
@@ -76,6 +82,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     lunch: true,
     dinner: true,
   });
+  const [leaveGroupModalVisible, setLeaveGroupModalVisible] = useState(false);
+  const [joinGroupModalVisible, setJoinGroupModalVisible] = useState(false);
+
+  const handleLeaveGroupSuccess = () => {
+    setLeaveGroupModalVisible(false);
+    setJoinGroupModalVisible(true);
+  };
+
+  const handleJoinGroupSuccess = () => {
+    setJoinGroupModalVisible(false);
+    onRefresh();
+  };
 
   const toggleMealPreference = (mealType: 'lunch' | 'dinner') => {
     setMealPreferences((current) => ({
@@ -188,7 +206,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <View style={styles.headerRight}>
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => alert("Leave group functionality coming soon!")}
+                onPress={() => setLeaveGroupModalVisible(true)}
               >
                 <Ionicons name="exit-outline" size={24} color="#fff" />
                 <Text style={styles.addButtonText}>Leave</Text>
@@ -224,7 +242,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           )}
 
           {/* Meal Preferences Section */}
-          <Text style={styles.mealSectionTitle}>Meal Preferences</Text>
+          {/* <Text style={styles.mealSectionTitle}>Meal Preferences</Text>
           <View
             style={{
               backgroundColor: COLORS.card,
@@ -236,9 +254,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
-          >
+          > */}
             {/* Lunch Toggle */}
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* <View style={{ flex: 1, alignItems: 'center' }}>
               <TouchableOpacity
                 style={{
                   width: 60,
@@ -266,19 +284,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               >
                 {mealPreferences.lunch ? 'Lunch ON' : 'Lunch OFF'}
               </Text>
-            </View>
+            </View> */}
 
             {/* Divider */}
-            <View
+            {/* <View
               style={{
                 width: 1,
                 height: 80,
                 backgroundColor: COLORS.border,
               }}
-            />
+            /> */}
 
             {/* Dinner Toggle */}
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* <View style={{ flex: 1, alignItems: 'center' }}>
               <TouchableOpacity
                 style={{
                   width: 60,
@@ -307,7 +325,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 {mealPreferences.dinner ? 'Dinner ON' : 'Dinner OFF'}
               </Text>
             </View>
-          </View>
+          </View> */}
 
           {/* Meal Selection Section - Only show if at least one meal is ON */}
           {availableMeals.length > 0 && (
@@ -560,6 +578,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Leave Group Modal */}
+      <LeaveGroupModal
+        visible={leaveGroupModalVisible}
+        onClose={() => setLeaveGroupModalVisible(false)}
+        groupName={mealGroup?.groupName || null}
+        onLeaveSuccess={handleLeaveGroupSuccess}
+        leaveMealGroup={onLeaveGroup}
+      />
+
+      {/* Join Another Group Modal */}
+      <JoinAnotherGroupModal
+        visible={joinGroupModalVisible}
+        onClose={() => setJoinGroupModalVisible(false)}
+        onJoinSuccess={handleJoinGroupSuccess}
+        joinMeal={onJoinGroup}
+      />
     </SafeAreaView>
   );
 };
