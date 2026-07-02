@@ -1,6 +1,7 @@
 import MealGroup from "../models/MealGroup.js";
 import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
+import GroupMembership from "../models/GroupMembership.js";
 import { getMealGroupPayloadForUser } from "./meal.controller.js";
 
 
@@ -135,6 +136,23 @@ export const acceptMember = async (req, res) => {
     group.members.push(user._id);
     await group.save();
 
+    const activeMembership = await GroupMembership.findOne({
+      user: user._id,
+      mealGroup: group._id,
+      status: "active",
+    });
+
+    if (activeMembership) {
+      activeMembership.leftAt = null;
+      await activeMembership.save();
+    } else {
+      await GroupMembership.create({
+        user: user._id,
+        mealGroup: group._id,
+        status: "active",
+      });
+    }
+
     request.status = "accepted";
     await request.save();
 
@@ -208,6 +226,18 @@ export const leaveGroup = async (req, res) => {
     }
 
     const groupName = group.groupName;
+
+    const activeMembership = await GroupMembership.findOne({
+      user: user._id,
+      mealGroup: group._id,
+      status: "active",
+    });
+
+    if (activeMembership) {
+      activeMembership.status = "left";
+      activeMembership.leftAt = new Date();
+      await activeMembership.save();
+    }
 
     // Remove user from group's members array
     group.members = group.members.filter(

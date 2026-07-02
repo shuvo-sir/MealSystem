@@ -1,6 +1,7 @@
 import MealGroup from "../models/MealGroup.js";
 import MealEntry from "../models/MealEntry.js";
 import User from "../models/User.js";
+import GroupMembership from "../models/GroupMembership.js";
 import generateCode from "../utils/generateCode.js";
 import calculateMealRate from "../utils/calculateMealRate.js";
 
@@ -175,6 +176,12 @@ export const createMealGroup = async (req, res) => {
       inviteCode,
       manager: user._id,
       members: [user._id],
+    });
+
+    await GroupMembership.create({
+      user: user._id,
+      mealGroup: mealGroup._id,
+      status: "active",
     });
 
     user.role = "manager";

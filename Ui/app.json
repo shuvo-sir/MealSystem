@@ -7,7 +7,7 @@
     "icon": "./assets/images/Recipe book-pana.png",
     "scheme": "ui",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
