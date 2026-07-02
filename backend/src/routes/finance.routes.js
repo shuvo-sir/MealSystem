@@ -4,6 +4,7 @@ import { validateRequest } from "../middleware/validation.middleware.js";
 import {
   addDeposit,
   addExpense,
+  addFinanceAdjustment,
   getTransactions,
   getExpenseHistory,
 } from "../controllers/finance.controller.js";
@@ -15,6 +16,9 @@ router.post("/deposit", validateRequest("deposit"), addDeposit);
 
 // expense - with validation
 router.post("/expense", validateRequest("expense"), addExpense);
+
+// adjustment - with validation
+router.post("/adjustment", validateRequest("financeAdjustment"), addFinanceAdjustment);
 
 // transactions and history
 router.get("/transactions", getTransactions);

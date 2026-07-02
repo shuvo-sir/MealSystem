@@ -31,6 +31,18 @@ export const addExpense =
 };
 
 
+// add finance adjustment (credit/due)
+export const addFinanceAdjustment = async (data, token) => {
+  const response = await API.post(
+    "/finance/adjustment",
+    data,
+    authConfig(token)
+  );
+
+  return response.data;
+};
+
+
 // get transactions
 export const getTransactions = async (
   groupId,

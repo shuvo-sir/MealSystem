@@ -2,6 +2,7 @@ import Deposit from "../models/Deposit.js";
 import Expense from "../models/Expense.js";
 import MealEntry from "../models/MealEntry.js";
 import MealGroup from "../models/MealGroup.js";
+import FinanceAdjustment from "../models/FinanceAdjustment.js";
 import User from "../models/User.js";
 import calculateMealRate from "../utils/calculateMealRate.js";
 import { updateGroupFinancials, addUserBalance, recalculateMealRateAtomic } from "../utils/atomicOperations.js";
@@ -142,6 +143,84 @@ export const addExpense = async (
 };
 
 // ==============================
+// ADD FINANCE ADJUSTMENT
+// ==============================
+
+export const addFinanceAdjustment = async (
+  req,
+  res
+) => {
+  try {
+    const { userId, monthKey, type, amount, note } = req.body;
+    const clerkId = req.auth?.userId;
+
+    const manager = await User.findOne({ clerkId });
+
+    if (!manager) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    if (!manager.mealGroup) {
+      return res.status(400).json({
+        success: false,
+        message: "Join meal group first",
+        code: "NO_MEAL_GROUP",
+      });
+    }
+
+    const group = await MealGroup.findById(manager.mealGroup);
+
+    if (!group || group.manager.toString() !== manager._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Only manager can add credit or due adjustments",
+        code: "FORBIDDEN",
+      });
+    }
+
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser || targetUser.mealGroup?.toString() !== group._id.toString()) {
+      return res.status(404).json({
+        success: false,
+        message: "Target user not found in this meal group",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    const signedAmount = type === "credit" ? amount : -amount;
+
+    const adjustment = await FinanceAdjustment.create({
+      mealGroup: group._id,
+      user: targetUser._id,
+      addedBy: manager._id,
+      monthKey,
+      type,
+      amount,
+      note,
+    });
+
+    await addUserBalance(targetUser._id, signedAmount);
+
+    res.status(201).json({
+      success: true,
+      message: "Finance adjustment added",
+      adjustment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: "INTERNAL_ERROR",
+    });
+  }
+};
+
+// ==============================
 // GET TRANSACTIONS
 // ==============================
 
@@ -180,6 +259,19 @@ export const getTransactions = async (
       .populate("addedBy", "name email")
       .lean();
 
+    const monthKey = startDate ? String(startDate).slice(0, 7) : null;
+    const adjustmentFilter = { mealGroup: groupId };
+
+    if (monthKey) {
+      adjustmentFilter.monthKey = monthKey;
+    }
+
+    const adjustments = await FinanceAdjustment.find(adjustmentFilter)
+      .populate("user", "name email")
+      .populate("addedBy", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
+
     // Combine and format
     const transactions = [
       ...deposits.map((d) => ({
@@ -198,6 +290,17 @@ export const getTransactions = async (
         title: e.title,
         user: e.addedBy,
         note: e.note,
+      })),
+      ...adjustments.map((a) => ({
+        _id: a._id,
+        type: "adjustment",
+        adjustmentType: a.type,
+        amount: a.amount,
+        date: a.createdAt,
+        monthKey: a.monthKey,
+        user: a.user,
+        addedBy: a.addedBy,
+        note: a.note,
       })),
     ]
       .sort((a, b) => new Date(b.date) - new Date(a.date));
