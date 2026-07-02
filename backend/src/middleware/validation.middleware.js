@@ -22,6 +22,26 @@ const validationSchemas = {
     note: Joi.string().optional().allow('').max(500),
   }).unknown(false),
 
+  financeAdjustment: Joi.object({
+    userId: Joi.string().required().messages({
+      'any.required': 'User is required',
+      'string.empty': 'User is required'
+    }),
+    monthKey: Joi.string().pattern(/^\d{4}-\d{2}$/).required().messages({
+      'any.required': 'Month is required',
+      'string.pattern.base': 'Month must be in YYYY-MM format'
+    }),
+    type: Joi.string().valid('credit', 'due').required().messages({
+      'any.required': 'Adjustment type is required',
+      'any.only': 'Adjustment type must be credit or due'
+    }),
+    amount: Joi.number().positive().required().messages({
+      'number.positive': 'Amount must be greater than 0',
+      'any.required': 'Amount is required'
+    }),
+    note: Joi.string().optional().allow('').max(500),
+  }).unknown(false),
+
   mealEntry: Joi.object({
     date: Joi.alternatives().try(
       Joi.string().isoDate(),

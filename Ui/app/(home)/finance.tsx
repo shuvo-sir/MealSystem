@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,39 +9,40 @@ import {
   Modal,
   TextInput,
   Alert,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "@clerk/expo";
-import { useAuth } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
-import { useFinanceHistory, FinanceFilter, Transaction } from "./_hooks/useFinanceHistory";
-import { getMyMealGroup } from "@/api/meal.api";
+import { useFinanceHistory } from "./_hooks/useFinanceHistory";
 import { styles } from "@/assets/styles/home.styles";
 import { COLORS } from "@/constants/colors";
 
 
 export default function FinanceScreen() {
   const { user } = useUser();
-  const { getToken } = useAuth();
-  const [avatarImageFailed, setAvatarImageFailed] = useState(false);
-  const [entries, setEntries] = useState<any[]>([]);
-  const hasLoadedEntriesRef = useRef(false);
 
   // Finance history hook
   const {
     backendUser,
     mealGroup,
+    members,
+    entries,
     deposits,
     expenses,
+    adjustments,
     isLoading,
     refreshing,
     actionLoading,
     errorMessage,
     isManager,
+    monthYearLabel,
+    goToPreviousMonth,
+    goToNextMonth,
+    resetToCurrentMonth,
     loadTransactionHistory,
     handleAddDeposit,
     handleAddExpense,
+    handleAddFinanceAdjustment,
   } = useFinanceHistory();
 
   // UI State
@@ -58,91 +59,21 @@ export default function FinanceScreen() {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseNote, setExpenseNote] = useState("");
 
-  const userName = useMemo(
-    () =>
-      [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-      user?.username ||
-      user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
-      "User",
-    [user?.emailAddresses, user?.firstName, user?.lastName, user?.username]
-  );
+  // Credit / Due form
+  const [adjustmentModalVisible, setAdjustmentModalVisible] = useState(false);
+  const [selectedAdjustmentUserId, setSelectedAdjustmentUserId] = useState("");
+  const [adjustmentType, setAdjustmentType] = useState<"credit" | "due">("credit");
+  const [adjustmentAmount, setAdjustmentAmount] = useState("");
+  const [adjustmentNote, setAdjustmentNote] = useState("");
 
-  const userEmail = useMemo(
-    () =>
-      user?.primaryEmailAddress?.emailAddress ||
-      user?.emailAddresses?.[0]?.emailAddress ||
-      "",
-    [user?.emailAddresses, user?.primaryEmailAddress]
-  );
-
-  const totalDeposits = useMemo(
-    () => deposits.reduce((sum, d) => sum + d.amount, 0),
-    [deposits]
-  );
-
-  const totalExpenses = useMemo(
-    () => expenses.reduce((sum, e) => sum + e.amount, 0),
-    [expenses]
-  );
-
-  // Load meal entries for individual metrics
-  useEffect(() => {
-    if (!user?.id || !backendUser?._id || hasLoadedEntriesRef.current) return;
-
-    const loadEntries = async () => {
-      try {
-        const token = await getToken();
-        const dashboard = await getMyMealGroup(token);
-        setEntries(dashboard.entries || []);
-        hasLoadedEntriesRef.current = true;
-      } catch (error) {
-        console.log("Error loading entries:", error);
-      }
-    };
-
-    loadEntries();
-  }, [user?.id, backendUser?._id, getToken]);
-
- 
-  // Calculate total expenses for individual user for the current month
-  const userExpensesThisMonth = useMemo(() => {
-    if (!backendUser?._id) return 0;
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    return expenses
-      .filter((e) => {
-        const expenseUserId = e.user?._id || e.user;
-        const [expenseYear, expenseMonth] = e.date.split("-").map(Number);
-        return (
-          expenseUserId === backendUser._id &&
-          expenseYear === currentYear &&
-          expenseMonth === currentMonth
-        );
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
-  }, [expenses, backendUser?._id]);
-
-
-
-// Calculate total meals for the current month
+// Calculate total meals for the selected month
  const userMealsThisMonth = useMemo(() => {
   if (!backendUser?._id) return 0;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
 
   let total = 0;
 
   for (const entry of entries) {
-    const [entryYear, entryMonth] = entry.date.split("-").map(Number);
-
-    if (
-      entryYear === year &&
-      entryMonth === month &&
-      (entry.user?._id === backendUser._id || entry.user === backendUser._id)
-    ) {
+    if (entry.user?._id === backendUser._id || entry.user === backendUser._id) {
       total += entry.totalMeals;
     }
   }
@@ -170,8 +101,19 @@ export default function FinanceScreen() {
     .reduce((sum, d) => sum + d.amount, 0);
 }, [deposits, backendUser?._id]);
 
+  const userAdjustmentThisMonth = useMemo(() => {
+    if (!backendUser?._id) return 0;
+
+    return adjustments
+      .filter((adjustment) => (adjustment.user?._id || adjustment.user) === backendUser._id)
+      .reduce((sum, adjustment) => {
+        const signed = adjustment.adjustmentType === "due" ? -adjustment.amount : adjustment.amount;
+        return sum + signed;
+      }, 0);
+  }, [adjustments, backendUser?._id]);
+
 const userBalance = useMemo(() => {
-  const balance = userDeposits - mealCostThisMonth;
+  const balance = userAdjustmentThisMonth + userDeposits - mealCostThisMonth;
 
   return {
     amount: Math.abs(balance),
@@ -179,7 +121,7 @@ const userBalance = useMemo(() => {
     label: balance < 0 ? "Amount Due" : "Available Balance",
     balance,
   };
-}, [userDeposits, mealCostThisMonth]);
+}, [userAdjustmentThisMonth, userDeposits, mealCostThisMonth]);
 
   const closeDepositModal = () => {
     setDepositModalVisible(false);
@@ -192,6 +134,14 @@ const userBalance = useMemo(() => {
     setExpenseTitle("");
     setExpenseAmount("");
     setExpenseNote("");
+  };
+
+  const closeAdjustmentModal = () => {
+    setAdjustmentModalVisible(false);
+    setSelectedAdjustmentUserId("");
+    setAdjustmentType("credit");
+    setAdjustmentAmount("");
+    setAdjustmentNote("");
   };
 
   const handleSaveDeposit = async () => {
@@ -221,6 +171,28 @@ const userBalance = useMemo(() => {
     await handleAddExpense(expenseTitle.trim(), amount, expenseNote, closeExpenseModal);
   };
 
+  const handleSaveAdjustment = async () => {
+    const amount = parseFloat(adjustmentAmount);
+
+    if (!selectedAdjustmentUserId) {
+      Alert.alert("Missing member", "Please select a member.");
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      Alert.alert("Invalid amount", "Please enter a valid amount.");
+      return;
+    }
+
+    await handleAddFinanceAdjustment(
+      selectedAdjustmentUserId,
+      adjustmentType,
+      amount,
+      adjustmentNote,
+      closeAdjustmentModal
+    );
+  };
+
   const formatCurrency = (amount: number) => {
     return `BDT ${amount.toFixed(2)}`;
   };
@@ -240,14 +212,19 @@ const userBalance = useMemo(() => {
 
   const mealRate = mealGroup?.mealRate || 0;
 
-  // USER MAP (fast lookup)
   const mealMap = new Map<string, number>();
   const depositMap = new Map<string, number>();
+  const adjustmentMap = new Map<string, number>();
   const userInfoMap = new Map<string, any>();
 
-  // ----------------------
-  // 1. Build Meals
-  // ----------------------
+  for (const member of members) {
+    if (!member?._id) continue;
+    userInfoMap.set(member._id, member);
+    mealMap.set(member._id, 0);
+    depositMap.set(member._id, 0);
+    adjustmentMap.set(member._id, 0);
+  }
+
   for (const entry of entries) {
     const userId = entry.user?._id || entry.user;
     if (!userId) continue;
@@ -262,9 +239,6 @@ const userBalance = useMemo(() => {
     }
   }
 
-  // ----------------------
-  // 2. Build Deposits
-  // ----------------------
   for (const dep of deposits) {
     const userId = dep.user?._id || dep.user;
     if (!userId) continue;
@@ -279,20 +253,38 @@ const userBalance = useMemo(() => {
     }
   }
 
-  // ----------------------
-  // 3. Merge into final list
-  // ----------------------
+  for (const adjustment of adjustments) {
+    const userId = adjustment.user?._id || adjustment.user;
+    if (!userId) continue;
+
+    const signedAmount = adjustment.adjustmentType === "due"
+      ? -(adjustment.amount || 0)
+      : (adjustment.amount || 0);
+
+    adjustmentMap.set(
+      userId,
+      (adjustmentMap.get(userId) || 0) + signedAmount
+    );
+
+    if (!userInfoMap.has(userId)) {
+      userInfoMap.set(userId, adjustment.user);
+    }
+  }
+
   const allUserIds = new Set([
+    ...members.map((member) => member._id),
     ...mealMap.keys(),
     ...depositMap.keys(),
+    ...adjustmentMap.keys(),
   ]);
 
   return Array.from(allUserIds).map((userId) => {
     const totalMeals = mealMap.get(userId) || 0;
     const totalDeposits = depositMap.get(userId) || 0;
+    const totalAdjustment = adjustmentMap.get(userId) || 0;
 
     const mealCost = totalMeals * mealRate;
-    const balance = totalDeposits - mealCost;
+    const balance = totalAdjustment + totalDeposits - mealCost;
 
     const user = userInfoMap.get(userId);
 
@@ -305,11 +297,17 @@ const userBalance = useMemo(() => {
         "Unknown User",
       totalMeals,
       totalDeposits,
+      totalAdjustment,
       mealCost,
       balance,
     };
-  });
-}, [isManager, entries, deposits, mealGroup?.mealRate, backendUser?._id]);
+  }).sort((a, b) => a.name.localeCompare(b.name));
+}, [isManager, entries, deposits, adjustments, mealGroup?.mealRate, backendUser?._id, members]);
+
+  const handleMonthChange = (delta: number) => {
+    if (delta < 0) goToPreviousMonth();
+    else if (delta > 0) goToNextMonth();
+  };
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -455,6 +453,33 @@ const userBalance = useMemo(() => {
                       elevation: 4,
                     }}
                   >
+                    <View style={{ marginBottom: 14, gap: 10 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <TouchableOpacity onPress={() => handleMonthChange(-1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
+                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{"<"}</Text>
+                        </TouchableOpacity>
+
+                        <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>{monthYearLabel}</Text>
+
+                        <TouchableOpacity onPress={() => handleMonthChange(1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
+                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{">"}</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity onPress={resetToCurrentMonth} style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.primary }}>
+                        <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Reset to Current Month</Text>
+                      </TouchableOpacity>
+
+                        {isManager && (
+                          <TouchableOpacity
+                            onPress={() => setAdjustmentModalVisible(true)}
+                            style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.expense }}
+                          >
+                            <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Add Credit / Due</Text>
+                          </TouchableOpacity>
+                        )}
+                    </View>
+
                     {/* Top Labels */}
                     <View
                       style={{
@@ -480,9 +505,7 @@ const userBalance = useMemo(() => {
                       />
                       
                       <View style={{ gap: 4 }}>
-                        <Text style={{ color: COLORS.textLight, fontSize: 12 }}>
-                        {userBalance.label}
-                      </Text>
+                        <Text style={{ color: COLORS.textLight, fontSize: 12 }}>{userBalance.label}</Text>
                       <Text
                         style={{
                           fontSize: 16,
@@ -582,6 +605,18 @@ const userBalance = useMemo(() => {
                         textAlign: "center",
                       }}
                     >
+                      Adjustment
+                    </Text>
+
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: COLORS.textLight,
+                        textAlign: "center",
+                      }}
+                    >
                       Meals
                     </Text>
 
@@ -645,6 +680,19 @@ const userBalance = useMemo(() => {
                         }}
                       >
                         {member.totalDeposits.toFixed(0)}
+                      </Text>
+
+                      {/* ADJUSTMENT */}
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 13,
+                          color: member.totalAdjustment >= 0 ? COLORS.income : COLORS.expense,
+                          textAlign: "center",
+                          fontWeight: "600",
+                        }}
+                      >
+                        {member.totalAdjustment.toFixed(0)}
                       </Text>
 
                       {/* MEALS */}
@@ -905,6 +953,88 @@ const userBalance = useMemo(() => {
           )}
         </View>
       </ScrollView>
+
+      {/* Add Credit / Due Modal */}
+      <Modal
+        visible={adjustmentModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeAdjustmentModal}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 20 }}>
+          <View style={{ backgroundColor: COLORS.card, borderRadius: 16, padding: 16, maxHeight: "80%" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: COLORS.text, marginBottom: 12 }}>
+              Add Credit / Due
+            </Text>
+
+            <Text style={{ fontSize: 12, color: COLORS.textLight, marginBottom: 8 }}>Select member</Text>
+            <ScrollView style={{ maxHeight: 150, marginBottom: 12 }}>
+              {members.map((member) => (
+                <TouchableOpacity
+                  key={member._id}
+                  onPress={() => setSelectedAdjustmentUserId(member._id)}
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    backgroundColor: selectedAdjustmentUserId === member._id ? COLORS.primary : COLORS.background,
+                  }}
+                >
+                  <Text style={{ color: selectedAdjustmentUserId === member._id ? "#FFF" : COLORS.text, fontWeight: "600" }}>
+                    {member.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+              <TouchableOpacity
+                onPress={() => setAdjustmentType("credit")}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center", backgroundColor: adjustmentType === "credit" ? COLORS.income : COLORS.border }}
+              >
+                <Text style={{ color: adjustmentType === "credit" ? "#FFF" : COLORS.textLight, fontWeight: "700" }}>Credit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setAdjustmentType("due")}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center", backgroundColor: adjustmentType === "due" ? COLORS.expense : COLORS.border }}
+              >
+                <Text style={{ color: adjustmentType === "due" ? "#FFF" : COLORS.textLight, fontWeight: "700" }}>Due</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={adjustmentAmount}
+              onChangeText={setAdjustmentAmount}
+              placeholder="Amount"
+              keyboardType="numeric"
+              style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginBottom: 12, color: COLORS.text }}
+            />
+
+            <TextInput
+              value={adjustmentNote}
+              onChangeText={setAdjustmentNote}
+              placeholder="Note (optional)"
+              style={{ borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, marginBottom: 12, color: COLORS.text }}
+            />
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                onPress={closeAdjustmentModal}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.border, alignItems: "center" }}
+              >
+                <Text style={{ color: COLORS.text, fontWeight: "700" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveAdjustment}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: COLORS.expense, alignItems: "center" }}
+              >
+                <Text style={{ color: "#FFF", fontWeight: "700" }}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Deposit Modal */}
       <Modal

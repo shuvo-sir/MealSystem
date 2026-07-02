@@ -81,8 +81,55 @@ export default function MyMealScreen() {
 
     const memberMap = new Map<string, Map<string, number>>();
 
+    const entryUsers = new Map<
+      string,
+      { _id: string; name: string }
+    >();
+
+    entries.forEach((entry) => {
+      const userId = typeof entry.user === "string" ? entry.user : entry.user?._id;
+
+      if (!userId) {
+        return;
+      }
+
+      if (typeof entry.user === "string") {
+        entryUsers.set(userId, {
+          _id: userId,
+          name: "Unknown",
+        });
+        return;
+      }
+
+      entryUsers.set(userId, {
+        _id: userId,
+        name: entry.user?.name || "Unknown",
+      });
+    });
+
+    const displayMembers = groupMembers.length
+      ? groupMembers
+      : Array.from(entryUsers.values());
+
+    const allMembers = new Map<string, { _id: string; name: string }>();
+
+    displayMembers.forEach((member) => {
+      if (member?._id) {
+        allMembers.set(member._id, {
+          _id: member._id,
+          name: member.name || "Unknown",
+        });
+      }
+    });
+
+    entryUsers.forEach((member) => {
+      if (!allMembers.has(member._id)) {
+        allMembers.set(member._id, member);
+      }
+    });
+
     // Initialize map with all members and days
-    groupMembers.forEach((member) => {
+    allMembers.forEach((member) => {
       memberMap.set(member._id, new Map());
       for (let i = 1; i <= daysCount; i++) {
         const dayKey = `day${i}`;
@@ -124,7 +171,7 @@ export default function MyMealScreen() {
     console.log(`✅ Processing done: ${processedCount} added, ${skippedCount} skipped`);
 
     // Convert to display format
-    return groupMembers.map((member) => {
+    return Array.from(allMembers.values()).map((member) => {
       const dailyData = memberMap.get(member._id);
       const dailyArray = [];
       let total = 0;
@@ -150,7 +197,8 @@ export default function MyMealScreen() {
 
     // Personal view: only show logged-in user
     if (viewMode === "personal" && backendUser) {
-      membersToShow = members.filter((m) => m._id === backendUser._id);
+      const personalMember = members.find((m) => m._id === backendUser._id);
+      membersToShow = personalMember ? [personalMember] : [backendUser];
     }
 
     // Filter by search query
