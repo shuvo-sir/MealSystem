@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -46,7 +46,11 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const loadPendingRequests = async () => {
+  const getApiErrorMessage = (error: any, fallback: string) => {
+    return error?.response?.data?.message || error?.message || fallback;
+  };
+
+  const loadPendingRequests = useCallback(async () => {
     if (!userMealGroupId) return;
 
     setLoading(true);
@@ -61,11 +65,11 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
       setRequests(data.requests || []);
     } catch (error) {
       console.error("Error loading pending requests:", error);
-      Alert.alert("Error", "Failed to load pending requests");
+      Alert.alert("Error", getApiErrorMessage(error, "Failed to load pending requests"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken, userMealGroupId]);
 
   const handleAcceptMember = async (requestId: string) => {
     try {
@@ -79,7 +83,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
       await loadPendingRequests();
     } catch (error) {
       console.error("Error accepting member:", error);
-      Alert.alert("Error", "Failed to accept member request");
+      Alert.alert("Error", getApiErrorMessage(error, "Failed to accept member request"));
     }
   };
 
@@ -95,7 +99,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
       await loadPendingRequests();
     } catch (error) {
       console.error("Error rejecting member:", error);
-      Alert.alert("Error", "Failed to reject member request");
+      Alert.alert("Error", getApiErrorMessage(error, "Failed to reject member request"));
     }
   };
 
@@ -103,12 +107,11 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
     if (visible && userMealGroupId) {
       loadPendingRequests();
     }
-  }, [visible]);
+  }, [visible, userMealGroupId, loadPendingRequests]);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
-        {/* Header */}
         <View
           style={{
             flexDirection: "row",
@@ -123,15 +126,11 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
           <Text style={{ fontSize: 18, fontWeight: "700", color: COLORS.text }}>
             Pending Member Requests
           </Text>
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={loading}
-          >
+          <TouchableOpacity onPress={onClose} disabled={loading}>
             <Ionicons name="close" size={24} color={COLORS.text} />
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingVertical: 16 }}>
           {loading ? (
             <View style={{ justifyContent: "center", alignItems: "center", marginTop: 50 }}>

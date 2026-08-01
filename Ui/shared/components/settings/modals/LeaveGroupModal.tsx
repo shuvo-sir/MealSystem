@@ -18,6 +18,7 @@ interface LeaveGroupModalProps {
   groupName: string | null;
   onLeaveSuccess: () => void;
   leaveMealGroup: () => Promise<void>;
+  isManager?: boolean;
 }
 
 export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
@@ -26,6 +27,7 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
   groupName,
   onLeaveSuccess,
   leaveMealGroup,
+  isManager = false,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,14 +37,19 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
       return;
     }
 
+    if (isManager) {
+      Alert.alert(
+        "Manager action required",
+        "You need to permanently upgrade someone else to manager before leaving the group."
+      );
+      return;
+    }
+
     Alert.alert(
       "Confirm Leave",
       `Are you sure you want to leave "${groupName}"? You will need an invite code to join another group.`,
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Leave",
           style: "destructive",
@@ -57,10 +64,7 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
               onLeaveSuccess();
               onClose();
             } catch (error: any) {
-              Alert.alert(
-                "Error",
-                error?.message || "Failed to leave the group"
-              );
+              Alert.alert("Error", error?.message || "Failed to leave the group");
             } finally {
               setIsLoading(false);
             }
@@ -71,70 +75,44 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.container}>
           <View style={styles.modalContent}>
-            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Leave Group</Text>
               <Pressable onPress={onClose}>
-                <Ionicons
-                  name="close-circle-outline"
-                  size={28}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="close-circle-outline" size={28} color={COLORS.primary} />
               </Pressable>
             </View>
 
-            {/* Warning Section */}
             <View style={styles.warningSection}>
               <View style={styles.warningIcon}>
-                <Ionicons
-                  name="warning-outline"
-                  size={32}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="warning-outline" size={32} color={COLORS.primary} />
               </View>
-              <Text style={styles.warningTitle}>
-                Leave "{groupName}"?
-              </Text>
+              <Text style={styles.warningTitle}>Leave "{groupName}"?</Text>
               <Text style={styles.warningMessage}>
                 Once you leave this group, you will lose access to all group data
                 and meal history. You can rejoin with a new invite code.
               </Text>
+              {isManager && (
+                <Text style={[styles.warningMessage, { marginTop: 12, color: COLORS.primary, fontWeight: "600" }]}>
+                  You are the manager. Permanently transfer manager role to another member first.
+                </Text>
+              )}
             </View>
 
-            {/* Info Section */}
             <View style={styles.infoSection}>
               <View style={styles.infoItem}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.infoText}>
-                  Other group members can still see meal history
-                </Text>
+                <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.infoText}>Other group members can still see meal history</Text>
               </View>
               <View style={styles.infoItem}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
-                <Text style={styles.infoText}>
-                  Your account will remain active
-                </Text>
+                <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.infoText}>Your account will remain active</Text>
               </View>
             </View>
 
-            {/* Action Buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}

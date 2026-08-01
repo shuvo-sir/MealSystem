@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, Image, Pressable } from "react-native";
+import { View, Text, Image } from "react-native";
 import { useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
@@ -31,7 +31,6 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
 
   return (
     <>
-      {/* Profile Section */}
       <View style={{ alignItems: "center", paddingBottom: 25 }}>
         {user?.imageUrl && !avatarImageFailed ? (
           <Image
@@ -70,7 +69,6 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
         </View>
       </View>
 
-      {/* Settings Title */}
       <View
         style={{
           paddingVertical: 20,

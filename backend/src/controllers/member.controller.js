@@ -3,6 +3,11 @@ import User from "../models/User.js";
 import JoinRequest from "../models/JoinRequest.js";
 import GroupMembership from "../models/GroupMembership.js";
 import { getMealGroupPayloadForUser } from "./meal.controller.js";
+import {
+  normalizeManagerDuration,
+  resolveExpiredManagerDelegation,
+  transferGroupManager,
+} from "../utils/managerDelegation.js";
 
 
 // Join meal group with invite code
@@ -97,6 +102,13 @@ export const getPendingRequests = async (req, res) => {
   try {
     const { groupId } = req.params;
 
+    if (!req.user?.mealGroup || req.user.mealGroup.toString() !== groupId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only view pending requests for your own group",
+      });
+    }
+
     const requests = await JoinRequest.find({
       mealGroup: groupId,
       status: "pending",
@@ -128,6 +140,13 @@ export const acceptMember = async (req, res) => {
 
     const user = await User.findById(request.user);
     const group = await MealGroup.findById(request.mealGroup);
+
+    if (!req.user?.mealGroup || req.user.mealGroup.toString() !== group._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only accept requests for your own group",
+      });
+    }
 
     // add user to group
     user.mealGroup = group._id;
@@ -179,6 +198,13 @@ export const rejectMember = async (req, res) => {
       });
     }
 
+    if (!req.user?.mealGroup || req.user.mealGroup.toString() !== request.mealGroup.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only reject requests for your own group",
+      });
+    }
+
     request.status = "rejected";
     await request.save();
 
@@ -225,6 +251,27 @@ export const leaveGroup = async (req, res) => {
       });
     }
 
+    await resolveExpiredManagerDelegation(group);
+    const freshGroup = await MealGroup.findById(group._id);
+
+    if (freshGroup.manager?.toString() === user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "You need to upgrade someone else to manager before leaving the group.",
+      });
+    }
+
+    if (
+      freshGroup.managerDelegation?.previousManager?.toString() === user._id.toString() &&
+      freshGroup.managerDelegation?.expiresAt &&
+      new Date(freshGroup.managerDelegation.expiresAt) > new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "You need to permanently upgrade someone else to manager before leaving the group.",
+      });
+    }
+
     const groupName = group.groupName;
 
     const activeMembership = await GroupMembership.findOne({
@@ -265,6 +312,72 @@ export const leaveGroup = async (req, res) => {
   } catch (error) {
     console.log(`[leaveGroup] Error: ${error.message}`);
     res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const transferManager = async (req, res) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { memberId, duration } = req.body;
+
+    const normalizedDuration = normalizeManagerDuration(duration);
+
+    if (!normalizedDuration) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid transfer duration.",
+      });
+    }
+
+    const currentManager = await User.findOne({ clerkId });
+
+    if (!currentManager || !currentManager.mealGroup) {
+      return res.status(404).json({
+        success: false,
+        message: "Current manager group not found",
+      });
+    }
+
+    const group = await MealGroup.findById(currentManager.mealGroup);
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Meal group not found",
+      });
+    }
+
+    const nextManager = await User.findById(memberId);
+
+    if (!nextManager) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected member not found",
+      });
+    }
+
+    await transferGroupManager({
+      group,
+      currentManager,
+      nextManager,
+      duration: normalizedDuration,
+    });
+
+    const payload = await getMealGroupPayloadForUser(currentManager);
+
+    res.json({
+      success: true,
+      message:
+        normalizedDuration === "permanent"
+          ? "Manager transferred successfully"
+          : `Manager transferred successfully for ${normalizedDuration} days`,
+      ...payload,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
       message: error.message,
     });
   }

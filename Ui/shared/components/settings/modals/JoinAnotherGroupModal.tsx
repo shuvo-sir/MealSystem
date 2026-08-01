@@ -8,7 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
-  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,7 +26,8 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
   onJoinSuccess,
   joinMeal,
 }) => {
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(""
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -42,8 +42,6 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
       await joinMeal({ inviteCode: inviteCode.trim() });
       setSubmitted(true);
       setInviteCode("");
-      
-      // Auto-close after 2 seconds and trigger refresh
       setTimeout(() => {
         onJoinSuccess();
         onClose();
@@ -67,36 +65,19 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
 
   if (submitted) {
     return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
-      >
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
         <View style={styles.overlay}>
           <SafeAreaView style={styles.container}>
             <View style={styles.modalContent}>
-              {/* Success Icon */}
               <View style={styles.successIcon}>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={64}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="checkmark-circle-outline" size={64} color={COLORS.primary} />
               </View>
-
-              {/* Success Message */}
               <Text style={styles.successTitle}>Request Submitted!</Text>
               <Text style={styles.successMessage}>
                 Your join request has been sent to the group manager. You will
                 be notified once they approve your request.
               </Text>
-
-              {/* Close Button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleClose}
-              >
+              <TouchableOpacity style={styles.submitButton} onPress={handleClose}>
                 <Text style={styles.submitButtonText}>Go to Home</Text>
               </TouchableOpacity>
             </View>
@@ -107,33 +88,21 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.container}>
           <View style={styles.modalContent}>
-            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Join Another Group</Text>
               <Pressable onPress={handleClose}>
-                <Ionicons
-                  name="close-circle-outline"
-                  size={28}
-                  color={COLORS.primary}
-                />
+                <Ionicons name="close-circle-outline" size={28} color={COLORS.primary} />
               </Pressable>
             </View>
 
-            {/* Description */}
             <Text style={styles.description}>
               Enter the invite code from your group manager to join a meal group.
             </Text>
 
-            {/* Input Section */}
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>Invite Code</Text>
               <TextInput
@@ -150,20 +119,13 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
               />
             </View>
 
-            {/* Info Box */}
             <View style={styles.infoBox}>
-              <Ionicons
-                name="information-circle-outline"
-                size={16}
-                color={COLORS.primary}
-              />
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.primary} />
               <Text style={styles.infoBoxText}>
-                You'll need to wait for the group manager to approve your
-                request.
+                You'll need to wait for the group manager to approve your request.
               </Text>
             </View>
 
-            {/* Action Buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}

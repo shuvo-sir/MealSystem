@@ -64,7 +64,6 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
-        {/* Header */}
         <View
           style={{
             flexDirection: "row",
@@ -84,7 +83,6 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24 }}
@@ -95,16 +93,8 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
             </View>
           ) : mealGroupData ? (
             <View>
-              {/* Group Name */}
               <View style={{ marginBottom: 24 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: COLORS.text,
-                    marginBottom: 8,
-                  }}
-                >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 8 }}>
                   Group Name
                 </Text>
                 <View
@@ -123,16 +113,8 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                 </View>
               </View>
 
-              {/* Members Count */}
               <View style={{ marginBottom: 24 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: COLORS.text,
-                    marginBottom: 8,
-                  }}
-                >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 8 }}>
                   Members
                 </Text>
                 <View
@@ -151,16 +133,8 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                 </View>
               </View>
 
-              {/* Invite Code */}
               <View style={{ marginBottom: 32 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: COLORS.text,
-                    marginBottom: 8,
-                  }}
-                >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 8 }}>
                   Invite Code
                 </Text>
                 <View
@@ -204,7 +178,6 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                 </Text>
               </View>
 
-              {/* Share Button */}
               <View style={{ marginBottom: 24 }}>
                 <Pressable
                   onPress={handleShareViaSMS}
@@ -227,7 +200,6 @@ export const GroupInfoModal: React.FC<GroupInfoModalProps> = ({
                 </Pressable>
               </View>
 
-              {/* Info Banner */}
               <View
                 style={{
                   backgroundColor: COLORS.primary + "10",

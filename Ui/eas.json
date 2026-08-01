@@ -6,13 +6,22 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2hhcmluZy1tb29zZS01NC5jbGVyay5hY2NvdW50cy5kZXYk"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2hhcmluZy1tb29zZS01NC5jbGVyay5hY2NvdW50cy5kZXYk"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2hhcmluZy1tb29zZS01NC5jbGVyay5hY2NvdW50cy5kZXYk"
+      }
     }
   },
   "submit": {

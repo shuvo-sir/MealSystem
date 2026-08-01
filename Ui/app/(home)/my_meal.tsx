@@ -14,8 +14,8 @@ import { useUser } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
 import { styles } from "@/assets/styles/myMeal.styles";
 import { COLORS } from "@/constants/colors";
-import { useMealHistory } from "./_hooks/useMealHistory";
-import { getDayFromDate } from "./_utils/dateRangeHelpers";
+import { useMealHistory } from "@/shared/hooks/useMealHistory";
+import { getDayFromDate } from "@/shared/utils/dateRangeHelpers";
 
 interface MemberMealData {
   id: string;

@@ -11,16 +11,13 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useUser } from "@clerk/expo";
 import { LoadingScreen } from "@/shared/components/LoadingScreen";
-import { useFinanceHistory } from "./_hooks/useFinanceHistory";
+import { useFinanceHistory } from "../../shared/hooks/useFinanceHistory";
 import { styles } from "@/assets/styles/home.styles";
 import { COLORS } from "@/constants/colors";
 
 
 export default function FinanceScreen() {
-  const { user } = useUser();
-
   // Finance history hook
   const {
     backendUser,
@@ -436,7 +433,7 @@ const userBalance = useMemo(() => {
 
           {/* Summary Tab */}
           {activeTab === "summary" && (
-              <View style={{ paddingHorizontal: 10, paddingBottom: 100 }}>
+              <View style={{ paddingHorizontal: 8, paddingBottom: 100 }}>
                 {backendUser && mealGroup && (
                   <View
                     style={{
@@ -453,32 +450,7 @@ const userBalance = useMemo(() => {
                       elevation: 4,
                     }}
                   >
-                    <View style={{ marginBottom: 14, gap: 10 }}>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                        <TouchableOpacity onPress={() => handleMonthChange(-1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
-                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{"<"}</Text>
-                        </TouchableOpacity>
 
-                        <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>{monthYearLabel}</Text>
-
-                        <TouchableOpacity onPress={() => handleMonthChange(1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
-                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{">"}</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      <TouchableOpacity onPress={resetToCurrentMonth} style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.primary }}>
-                        <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Reset to Current Month</Text>
-                      </TouchableOpacity>
-
-                        {isManager && (
-                          <TouchableOpacity
-                            onPress={() => setAdjustmentModalVisible(true)}
-                            style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.expense }}
-                          >
-                            <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Add Credit / Due</Text>
-                          </TouchableOpacity>
-                        )}
-                    </View>
 
                     {/* Top Labels */}
                     <View
@@ -548,7 +520,35 @@ const userBalance = useMemo(() => {
                   </View>
               )}
               {isManager && (
-                <View style={{ marginTop: 20, paddingHorizontal: 10 }}>
+                <View style={{ marginTop: 20, paddingHorizontal: 8 }}>
+
+                {/* Month Navigation and credit and due management */}
+                  <View style={{ marginBottom: 14, gap: 10 }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <TouchableOpacity onPress={() => handleMonthChange(-1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
+                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{"<"}</Text>
+                        </TouchableOpacity>
+
+                        <Text style={{ fontSize: 16, fontWeight: "700", color: COLORS.text }}>{monthYearLabel}</Text>
+
+                        <TouchableOpacity onPress={() => handleMonthChange(1)} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: COLORS.border }}>
+                          <Text style={{ color: COLORS.text, fontWeight: "700" }}>{">"}</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TouchableOpacity onPress={resetToCurrentMonth} style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.primary }}>
+                        <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Reset to Current Month</Text>
+                      </TouchableOpacity>
+
+                        {isManager && (
+                          <TouchableOpacity
+                            onPress={() => setAdjustmentModalVisible(true)}
+                            style={{ alignSelf: "center", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: COLORS.expense }}
+                          >
+                            <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "700" }}>Add Credit / Due</Text>
+                          </TouchableOpacity>
+                        )}
+                    </View>
                   
                   {/* TITLE */}
                   <Text
@@ -559,7 +559,7 @@ const userBalance = useMemo(() => {
                       color: COLORS.text,
                     }}
                   >
-                    All Members Overview
+                    All Members Overview....
                   </Text>
 
                   {/* HEADER */}
@@ -570,11 +570,12 @@ const userBalance = useMemo(() => {
                       borderBottomWidth: 2,
                       borderBottomColor: COLORS.border,
                       backgroundColor: COLORS.background,
+
                     }}
                   >
                     <Text
                       style={{
-                        flex: 1,
+                        flex: 0.9,
                         fontSize: 12,
                         fontWeight: "700",
                         color: COLORS.textLight,
@@ -586,7 +587,7 @@ const userBalance = useMemo(() => {
 
                     <Text
                       style={{
-                        flex: 1,
+                        flex: 1.3,
                         fontSize: 12,
                         fontWeight: "700",
                         color: COLORS.textLight,
@@ -598,7 +599,7 @@ const userBalance = useMemo(() => {
 
                     <Text
                       style={{
-                        flex: 1,
+                        flex: 1.7,
                         fontSize: 12,
                         fontWeight: "700",
                         color: COLORS.textLight,
@@ -610,7 +611,7 @@ const userBalance = useMemo(() => {
 
                     <Text
                       style={{
-                        flex: 1,
+                        flex: 0.9,
                         fontSize: 12,
                         fontWeight: "700",
                         color: COLORS.textLight,
@@ -622,7 +623,7 @@ const userBalance = useMemo(() => {
 
                     <Text
                       style={{
-                        flex: 1,
+                        flex: 0.9,
                         fontSize: 12,
                         fontWeight: "700",
                         color: COLORS.textLight,
@@ -655,12 +656,13 @@ const userBalance = useMemo(() => {
                         borderBottomWidth: 1,
                         borderBottomColor: COLORS.border,
                         alignItems: "center",
+                        gap: 2
                       }}
                     >
                       {/* NAME */}
                       <Text
                         style={{
-                          flex: 1,
+                          flex: 0.9,
                           fontSize: 13,
                           color: COLORS.text,
                           textAlign: "center",
@@ -672,7 +674,7 @@ const userBalance = useMemo(() => {
                       {/* DEPOSITS */}
                       <Text
                         style={{
-                          flex: 1,
+                          flex: 1.3,
                           fontSize: 13,
                           color: COLORS.primary,
                           textAlign: "center",
@@ -685,7 +687,7 @@ const userBalance = useMemo(() => {
                       {/* ADJUSTMENT */}
                       <Text
                         style={{
-                          flex: 1,
+                          flex: 1.6,
                           fontSize: 13,
                           color: member.totalAdjustment >= 0 ? COLORS.income : COLORS.expense,
                           textAlign: "center",
@@ -698,7 +700,7 @@ const userBalance = useMemo(() => {
                       {/* MEALS */}
                       <Text
                         style={{
-                          flex: 1,
+                          flex: 0.9,
                           fontSize: 13,
                           color: COLORS.text,
                           textAlign: "center",
@@ -710,7 +712,7 @@ const userBalance = useMemo(() => {
                       {/* COST */}
                       <Text
                         style={{
-                          flex: 1,
+                          flex: 0.9,
                           fontSize: 13,
                           color: COLORS.text,
                           textAlign: "center",

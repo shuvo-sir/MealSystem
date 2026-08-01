@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import MealGroup from "../models/MealGroup.js";
+import { resolveExpiredManagerDelegation } from "./managerDelegation.js";
 
 /**
  * Authorization helper utilities
@@ -14,7 +15,12 @@ import MealGroup from "../models/MealGroup.js";
  */
 const isGroupManager = async (userId, groupId) => {
   try {
-    const group = await MealGroup.findById(groupId).select('manager');
+    let group = await MealGroup.findById(groupId);
+    if (!group) {
+      return false;
+    }
+
+    group = await resolveExpiredManagerDelegation(group);
     return group && group.manager.toString() === userId.toString();
   } catch (error) {
     console.error('[authorizationHelpers] isGroupManager error:', error.message);
@@ -137,6 +143,8 @@ const requireGroupManager = async (req, res, next) => {
         code: 'FORBIDDEN',
       });
     }
+
+    req.user = user;
 
     next();
   } catch (error) {

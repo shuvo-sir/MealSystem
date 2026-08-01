@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/expo";
+import { useFocusEffect } from "@react-navigation/native";
 import { getMyMealGroup } from "@/api/meal.api";
 
 interface ManagerStatusData {
@@ -9,11 +10,6 @@ interface ManagerStatusData {
   isLoading: boolean;
 }
 
-/**
- * Custom hook to manage manager status and meal group data
- * Prevents infinite re-renders by using useCallback and useRef
- * Ensures single API call to /api/meals/my-group
- */
 export const useManagerStatus = () => {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -26,8 +22,11 @@ export const useManagerStatus = () => {
     isLoading: true,
   });
 
-  const checkManagerStatus = useCallback(async () => {
-    // Prevent multiple calls
+  const checkManagerStatus = useCallback(async (forceRefresh = false) => {
+    if (forceRefresh) {
+      hasCalledRef.current = false;
+    }
+
     if (hasCalledRef.current) return;
     hasCalledRef.current = true;
 
@@ -45,7 +44,7 @@ export const useManagerStatus = () => {
         setData({
           isManager:
             dashboardData.user?.role === "manager" ||
-            dashboardData.mealGroup?.manager === dashboardData.user?._id,
+            dashboardData.mealGroup?.manager?.toString() === dashboardData.user?._id?.toString(),
           userMealGroupId: dashboardData.mealGroup._id,
           mealGroupData: dashboardData.mealGroup,
           isLoading: false,
@@ -69,12 +68,21 @@ export const useManagerStatus = () => {
     }
   }, [getToken]);
 
-  // Single effect to call checkManagerStatus once
-  useEffect(() => {
-    if (user?.id) {
-      checkManagerStatus();
-    }
-  }, [user?.id]); // Only depend on user.id, not getToken
+  const refreshManagerStatus = useCallback(async () => {
+    hasCalledRef.current = false;
+    await checkManagerStatus(true);
+  }, [checkManagerStatus]);
 
-  return data;
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        checkManagerStatus();
+      }
+    }, [user?.id, checkManagerStatus])
+  );
+
+  return {
+    ...data,
+    refreshManagerStatus,
+  };
 };

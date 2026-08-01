@@ -87,7 +87,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24 }}
         >
-          {/* Push Notifications Toggle */}
           <View
             style={{
               paddingVertical: 16,
@@ -114,7 +113,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
             />
           </View>
 
-          {/* Email Notifications Toggle */}
           <View
             style={{
               paddingVertical: 16,
@@ -141,7 +139,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
             />
           </View>
 
-          {/* Meal Reminders Toggle */}
           <View
             style={{
               paddingVertical: 16,
@@ -168,7 +165,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
             />
           </View>
 
-          {/* Reminder Frequency Selector */}
           {prefs.mealReminders && (
             <View style={{ marginTop: 24, marginBottom: 32 }}>
               <Text

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,8 +19,8 @@ import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
 import { BackendUser, MealEntry, MealGroup, GroupNote } from "../types/homeScreen.types";
 import { formatNoteDate } from "../utils/homeScreenHelpers";
-import { LeaveGroupModal } from "@/app/(home)/_components/settings/modals/LeaveGroupModal";
-import { JoinAnotherGroupModal } from "@/app/(home)/_components/settings/modals/JoinAnotherGroupModal";
+import { LeaveGroupModal } from "@/shared/components/settings/modals/LeaveGroupModal";
+import { JoinAnotherGroupModal } from "@/shared/components/settings/modals/JoinAnotherGroupModal";
 
 interface DashboardScreenProps {
   backendUser: BackendUser | null;
@@ -77,11 +77,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onJoinGroup,
 }) => {
   const { user } = useUser();
-  const [expandedCookingPeople, setExpandedCookingPeople] = React.useState(true);
-  const [mealPreferences, setMealPreferences] = React.useState<{ lunch: boolean; dinner: boolean }>({
-    lunch: true,
-    dinner: true,
-  });
   const [leaveGroupModalVisible, setLeaveGroupModalVisible] = useState(false);
   const [joinGroupModalVisible, setJoinGroupModalVisible] = useState(false);
 
@@ -95,38 +90,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     onRefresh();
   };
 
-  const toggleMealPreference = (mealType: 'lunch' | 'dinner') => {
-    setMealPreferences((current) => ({
-      ...current,
-      [mealType]: !current[mealType],
-    }));
-  };
-
-  const availableMeals = meals.filter((meal) => {
-    if (meal.id === 2) return mealPreferences.lunch; // Lunch
-    if (meal.id === 3) return mealPreferences.dinner; // Dinner
-    return true;
-  });
-
-  const selectedMealNames = useMemo(
-    () =>
-      meals
-        .filter((meal) => selectedMeals.includes(meal.id))
-        .map((meal) => meal.name)
-        .join(", "),
-    [selectedMeals]
-  );
-
-  // Calculate how many people need each meal (based on today's entries)
-  const getMealCount = useMemo(() => {
-    return (mealId: number) => {
-      const mealKey = mealId === 2 ? "lunch" : "dinner";
-      return entries.filter((entry) => {
-        const mealValue = entry[mealKey as keyof MealEntry];
-        return mealValue && (mealValue as number) > 0;
-      }).length || 0;
-    };
-  }, [entries]);
+  const availableMeals = meals;
 
   // Get list of people cooking for a specific meal
   // const getMealPeople = useMemo(() => {
@@ -586,6 +550,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         groupName={mealGroup?.groupName || null}
         onLeaveSuccess={handleLeaveGroupSuccess}
         leaveMealGroup={onLeaveGroup}
+        isManager={backendUser?.role === "manager"}
       />
 
       {/* Join Another Group Modal */}
