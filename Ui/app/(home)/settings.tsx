@@ -9,30 +9,31 @@ import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
 
 // Hooks
-import { useManagerStatus } from "@/app/(home)/_hooks/useManagerStatus";
-import { useSettingsModals } from "@/app/(home)/_hooks/useSettingsModals";
+import { useManagerStatus } from "@/shared/hooks/useManagerStatus";
+import { useSettingsModals } from "@/shared/hooks/useSettingsModals";
 
 // Components
-import { SettingsHeader } from "@/app/(home)/_components/settings/SettingsHeader";
-import { SettingsMenu, SettingsMenuItem } from "@/app/(home)/_components/settings/SettingsMenu";
+import { SettingsHeader } from "@/shared/components/settings/SettingsHeader";
+import { SettingsMenu, SettingsMenuItem } from "@/shared/components/settings/SettingsMenu";
 
 // Modals
-import { ProfileEditModal } from "@/app/(home)/_components/settings/modals/ProfileEditModal";
-import { PasswordChangeModal } from "@/app/(home)/_components/settings/modals/PasswordChangeModal";
-import { NotificationsModal } from "@/app/(home)/_components/settings/modals/NotificationsModal";
-import { HelpSupportModal } from "@/app/(home)/_components/settings/modals/HelpSupportModal";
-import { GroupInfoModal } from "@/app/(home)/_components/settings/modals/GroupInfoModal";
-import { PendingRequestsModal } from "@/app/(home)/_components/settings/modals/PendingRequestsModal";
+import { ProfileEditModal } from "@/shared/components/settings/modals/ProfileEditModal";
+import { PasswordChangeModal } from "@/shared/components/settings/modals/PasswordChangeModal";
+import { NotificationsModal } from "@/shared/components/settings/modals/NotificationsModal";
+import { HelpSupportModal } from "@/shared/components/settings/modals/HelpSupportModal";
+import { GroupInfoModal } from "@/shared/components/settings/modals/GroupInfoModal";
+import { PendingRequestsModal } from "@/shared/components/settings/modals/PendingRequestsModal";
+import { TransferManagerModal } from "@/shared/components/settings/modals/TransferManagerModal";
 
 export default function SettingsScreen() {
   const { signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState<string>("deepHarvest");
+  const [selectedTheme] = useState<string>("deepHarvest");
 
   // Custom hooks
-  const { isManager, userMealGroupId, mealGroupData, isLoading: managerLoading } = useManagerStatus();
+  const { isManager, userMealGroupId, mealGroupData, isLoading: managerLoading, refreshManagerStatus } = useManagerStatus();
   const { modals, openModal, closeModal } = useSettingsModals();
   // Handlers
   const handleChangeProfilePicture = async () => {
@@ -70,7 +71,7 @@ export default function SettingsScreen() {
           Alert.alert("Upload Failed", msg);
         }
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to select profile picture.");
     } finally {
       setIsLoading(false);
@@ -116,7 +117,7 @@ export default function SettingsScreen() {
           try {
             await signOut();
             router.replace("/(auth)/sign-in");
-          } catch (error) {
+          } catch {
             Alert.alert("Error", "Failed to sign out.");
           }
         },
@@ -164,6 +165,12 @@ export default function SettingsScreen() {
             title: "Pending Member Requests",
             subtitle: "Approve or reject join requests",
             onPress: () => openModal("pendingRequestsModal"),
+          },
+          {
+            icon: "swap-horizontal",
+            title: "Transfer Manager",
+            subtitle: "Promote a member temporarily or permanently",
+            onPress: () => openModal("transferManagerModal"),
           },
         ]
       : []),
@@ -269,6 +276,13 @@ export default function SettingsScreen() {
         visible={modals.pendingRequestsModal}
         onClose={() => closeModal("pendingRequestsModal")}
         userMealGroupId={userMealGroupId}
+      />
+
+      <TransferManagerModal
+        visible={modals.transferManagerModal}
+        onClose={() => closeModal("transferManagerModal")}
+        mealGroupData={mealGroupData}
+        onTransferSuccess={refreshManagerStatus}
       />
     </SafeAreaView>
   );

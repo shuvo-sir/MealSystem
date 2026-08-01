@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useMemo, useState, useRef } from "react";
 import { Alert } from "react-native";
 import { useAuth, useUser } from "@clerk/expo";
+import { useFocusEffect } from "@react-navigation/native";
 import { getMealHistory, getMyMealGroup } from "@/api/meal.api";
 import {
   getTransactions,
@@ -8,17 +9,14 @@ import {
   addExpense,
   addFinanceAdjustment,
 } from "@/api/finance.api";
-import {
-  BackendUser,
-  MealGroup,
-} from "../_types/homeScreen.types";
-import { getErrorMessage } from "../_utils/homeScreenHelpers";
+import { BackendUser, MealGroup } from "@/shared/types/homeScreen.types";
+import { getErrorMessage } from "@/shared/utils/homeScreenHelpers";
 import {
   getMonthDateRange,
   getCurrentMonthYear,
   formatMonthYear,
   navigateMonth,
-} from "../_utils/dateRangeHelpers";
+} from "@/shared/utils/dateRangeHelpers";
 
 export interface Transaction {
   _id: string;
@@ -42,13 +40,11 @@ export interface FinanceFilter {
 export const useFinanceHistory = () => {
   const { user } = useUser();
   const { getToken } = useAuth();
-
-  // Track if initial load has been done
   const hasLoadedRef = useRef(false);
 
   const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
   const [mealGroup, setMealGroup] = useState<MealGroup | null>(null);
-  const [members, setMembers] = useState<any[]>([]);
+  const [members, setMembers] = useState<BackendUser[]>([]);
   const [entries, setEntries] = useState<any[]>([]);
   const [deposits, setDeposits] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Transaction[]>([]);
@@ -57,18 +53,12 @@ export const useFinanceHistory = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [selectedFilter, setSelectedFilter] = useState<FinanceFilter>({});
   const [currentMonth, setCurrentMonth] = useState(() => getCurrentMonthYear().month);
   const [currentYear, setCurrentYear] = useState(() => getCurrentMonthYear().year);
 
   const monthYearLabel = useMemo(
     () => formatMonthYear(currentMonth, currentYear),
-    [currentMonth, currentYear]
-  );
-
-  const dateRange = useMemo(
-    () => getMonthDateRange(currentMonth, currentYear),
     [currentMonth, currentYear]
   );
 
@@ -102,7 +92,6 @@ export const useFinanceHistory = () => {
       try {
         const token = await getToken();
 
-        // Get user's meal group first
         const dashboard = await getMyMealGroup(token);
         setBackendUser(dashboard.user || null);
         setMealGroup(dashboard.mealGroup || null);
@@ -120,7 +109,6 @@ export const useFinanceHistory = () => {
 
           setEntries(mealHistoryData.entries || []);
 
-          // Fetch transactions
           const transactionsData = await getTransactions(
             dashboard.mealGroup._id,
             {
@@ -160,13 +148,14 @@ export const useFinanceHistory = () => {
     [user?.id, getToken, currentMonth, currentYear]
   );
 
-  // Load on mount
-  useEffect(() => {
-    if (!user?.id || hasLoadedRef.current) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id || hasLoadedRef.current) return;
 
-    hasLoadedRef.current = true;
-    loadTransactionHistory(true);
-  }, [user?.id, loadTransactionHistory]);
+      hasLoadedRef.current = true;
+      loadTransactionHistory(true);
+    }, [user?.id, loadTransactionHistory])
+  );
 
   const handleFilterChange = useCallback(
     async (newFilter: FinanceFilter) => {
@@ -284,10 +273,7 @@ export const useFinanceHistory = () => {
       }
 
       if (!isManager) {
-        Alert.alert(
-          "Permission denied",
-          "Only managers can add expenses."
-        );
+        Alert.alert("Permission denied", "Only managers can add expenses.");
         return;
       }
 
@@ -382,7 +368,6 @@ export const useFinanceHistory = () => {
   );
 
   return {
-    // State
     backendUser,
     mealGroup,
     members,
@@ -402,8 +387,6 @@ export const useFinanceHistory = () => {
     goToPreviousMonth,
     goToNextMonth,
     resetToCurrentMonth,
-
-    // Handlers
     loadTransactionHistory,
     handleFilterChange,
     handleAddDeposit,

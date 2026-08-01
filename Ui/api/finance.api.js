@@ -1,4 +1,5 @@
 import API, { authConfig } from "./api";
+import { invalidateMyMealGroupCache } from "./meal.api";
 
 
 // add deposit
@@ -11,6 +12,8 @@ export const addDeposit =
         data,
         authConfig(token)
       );
+
+  invalidateMyMealGroupCache(token);
 
     return response.data;
 };
@@ -27,6 +30,8 @@ export const addExpense =
         authConfig(token)
       );
 
+  invalidateMyMealGroupCache(token);
+
     return response.data;
 };
 
@@ -38,6 +43,8 @@ export const addFinanceAdjustment = async (data, token) => {
     data,
     authConfig(token)
   );
+
+  invalidateMyMealGroupCache(token);
 
   return response.data;
 };

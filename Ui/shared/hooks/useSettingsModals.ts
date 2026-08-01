@@ -7,12 +7,9 @@ export interface SettingsModalsState {
   helpModal: boolean;
   groupInfoModal: boolean;
   pendingRequestsModal: boolean;
+  transferManagerModal: boolean;
 }
 
-/**
- * Custom hook to manage all settings modal visibility states
- * Eliminates prop drilling and centralizes modal state management
- */
 export const useSettingsModals = () => {
   const [modals, setModals] = useState<SettingsModalsState>({
     profileModal: false,
@@ -21,6 +18,7 @@ export const useSettingsModals = () => {
     helpModal: false,
     groupInfoModal: false,
     pendingRequestsModal: false,
+    transferManagerModal: false,
   });
 
   const openModal = useCallback((modal: keyof SettingsModalsState) => {

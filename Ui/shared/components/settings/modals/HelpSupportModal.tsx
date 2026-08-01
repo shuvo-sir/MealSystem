@@ -6,8 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Pressable,
-  Alert,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -96,7 +94,6 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 24 }}
         >
-          {/* FAQ Section */}
           <View style={{ marginBottom: 32 }}>
             <Text
               style={{
@@ -164,7 +161,6 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             ))}
           </View>
 
-          {/* Support Section */}
           <View
             style={{
               backgroundColor: COLORS.primary + "10",
@@ -208,7 +204,6 @@ export const HelpSupportModal: React.FC<HelpSupportModalProps> = ({
             </Text>
           </View>
 
-          {/* Version Info */}
           <View
             style={{
               alignItems: "center",

@@ -14,15 +14,47 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 
 import AnimatedSplash from "../components/AnimatedSplash";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 
 // Keep native splash active during engine boot
 SplashScreen.preventAutoHideAsync();
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() ?? "";
 
-if (!publishableKey) {
-  throw new Error("Add your Clerk Publishable Key to the .env file");
+function MissingConfigScreen() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+        backgroundColor: COLORS.background,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "700",
+          color: COLORS.text,
+          textAlign: "center",
+          marginBottom: 8,
+        }}
+      >
+        App configuration is missing
+      </Text>
+      <Text
+        style={{
+          fontSize: 14,
+          color: COLORS.textLight,
+          textAlign: "center",
+          lineHeight: 20,
+        }}
+      >
+        The Clerk publishable key was not bundled into this build. Rebuild the APK with the public env variables configured.
+      </Text>
+    </View>
+  );
 }
 
 export default function RootLayout() {
@@ -53,6 +85,11 @@ export default function RootLayout() {
   // Wait underneath the native splash screen until font resources are ready
   if (!fontsLoaded && !fontError) {
     return null;
+  }
+
+  if (!publishableKey) {
+    console.error("Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in app bootstrap");
+    return <MissingConfigScreen />;
   }
 
   // Show your beautiful custom splash screen sequence

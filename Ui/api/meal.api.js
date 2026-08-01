@@ -1,15 +1,59 @@
 import API, { authConfig } from "./api";
 
+const MY_GROUP_CACHE_TTL_MS = 5000;
+
+const myGroupCache = new Map();
+const myGroupInFlight = new Map();
+
+const getMyGroupCacheKey = (token) => token || "anonymous";
+
+export const invalidateMyMealGroupCache = (token) => {
+  if (token) {
+    myGroupCache.delete(getMyGroupCacheKey(token));
+    myGroupInFlight.delete(getMyGroupCacheKey(token));
+    return;
+  }
+
+  myGroupCache.clear();
+  myGroupInFlight.clear();
+};
+
 
 // get current user's meal group details
 export const getMyMealGroup = async (token) => {
-  const response = await API.get("/meals/my-group", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const cacheKey = getMyGroupCacheKey(token);
+  const cached = myGroupCache.get(cacheKey);
 
-  return response.data;
+  if (cached && Date.now() - cached.timestamp < MY_GROUP_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  if (myGroupInFlight.has(cacheKey)) {
+    return myGroupInFlight.get(cacheKey);
+  }
+
+  const request = (async () => {
+    const response = await API.get("/meals/my-group", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    myGroupCache.set(cacheKey, {
+      data: response.data,
+      timestamp: Date.now(),
+    });
+
+    return response.data;
+  })();
+
+  myGroupInFlight.set(cacheKey, request);
+
+  try {
+    return await request;
+  } finally {
+    myGroupInFlight.delete(cacheKey);
+  }
 };
 
 
@@ -20,6 +64,8 @@ export const createMealGroup = async (data, token) => {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  invalidateMyMealGroupCache(token);
 
   return response.data;
 };
@@ -33,6 +79,8 @@ export const joinMeal = async (data, token) => {
     },
   });
 
+  invalidateMyMealGroupCache(token);
+
   return response.data;
 };
 
@@ -44,6 +92,8 @@ export const addMealEntry = async (data, token) => {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  invalidateMyMealGroupCache(token);
 
   return response.data;
 };
@@ -93,6 +143,20 @@ export const rejectMember =
 };
 
 
+// transfer manager role
+export const transferManager = async (data, token) => {
+  const response = await API.patch(
+    "/member/transfer-manager",
+    data,
+    authConfig(token)
+  );
+
+  invalidateMyMealGroupCache(token);
+
+  return response.data;
+};
+
+
 // leave meal group
 export const leaveMealGroup = async (token) => {
   const response = await API.post(
@@ -100,6 +164,8 @@ export const leaveMealGroup = async (token) => {
     {},
     authConfig(token)
   );
+
+  invalidateMyMealGroupCache(token);
 
   return response.data;
 };
@@ -146,6 +212,8 @@ export const updateMealEntry = async (
       authConfig(token)
     );
 
+    invalidateMyMealGroupCache(token);
+
     return response.data;
   } catch (error) {
     throw {
@@ -167,6 +235,8 @@ export const deleteMealEntry = async (
       `/meal-entries/${entryId}`,
       authConfig(token)
     );
+
+    invalidateMyMealGroupCache(token);
 
     return response.data;
   } catch (error) {

@@ -1,5 +1,16 @@
-import axios from "axios";
-import { retryWithBackoff } from "./retryLogic";
+import { create as createAxios } from "axios";
+const NETWORK_RETRY_CONFIG = {
+  MAX_RETRIES: 2,
+  BASE_DELAY_MS: 2000,
+  MAX_DELAY_MS: 5000,
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const shouldRetryNetworkError = (error) => {
+  const method = error?.config?.method?.toLowerCase();
+  return !error?.response && (method === "get" || method === "head");
+};
 
 // 1. Safely resolve the base URL by ensuring it's a real, non-empty string
 const getBaseURL = () => {
@@ -17,9 +28,9 @@ const resolvedURL = getBaseURL();
 
 console.log("API BASE URL:", resolvedURL);
 
-const API = axios.create({
+const API = createAxios({
   baseURL: resolvedURL,
-  timeout:10000,
+  timeout: 30000,
 });
 
 // Store the original request config for potential retries
@@ -42,31 +53,36 @@ API.interceptors.response.use(
     console.log("RESPONSE ERROR DATA:", error.response?.data);
     console.log("RESPONSE ERROR MESSAGE:", error.message);
 
-    // Handle 429 (Rate Limit Exceeded) with retry logic
-    if (error.response?.status === 429 && error.config) {
-      // Check if already retried to prevent infinite loops
-      if (!error.config.__retryCount) {
-        error.config.__retryCount = 0;
+    if (shouldRetryNetworkError(error) && error.config) {
+      if (!error.config.__networkRetryCount) {
+        error.config.__networkRetryCount = 0;
       }
 
-      if (error.config.__retryCount < 3) {
-        error.config.__retryCount++;
+      if (error.config.__networkRetryCount < NETWORK_RETRY_CONFIG.MAX_RETRIES) {
+        error.config.__networkRetryCount++;
+
+        const delay = Math.min(
+          NETWORK_RETRY_CONFIG.BASE_DELAY_MS * Math.pow(2, error.config.__networkRetryCount - 1),
+          NETWORK_RETRY_CONFIG.MAX_DELAY_MS
+        );
+
+        console.log(
+          `NETWORK_RETRY: Retrying ${error.config.method?.toUpperCase()} ${error.config.url} in ${delay}ms (attempt ${error.config.__networkRetryCount}/${NETWORK_RETRY_CONFIG.MAX_RETRIES})`
+        );
+
+        await sleep(delay);
 
         try {
-          // Create a function that retries the request with the same config
-          const retryRequest = () => {
-            return API.request(error.config);
-          };
-
-          // Attempt retry with exponential backoff
-          const response = await retryWithBackoff(retryRequest, error);
-          return response;
+          return await API.request(error.config);
         } catch (retryError) {
-          // All retries exhausted or different error occurred
-          console.log("RETRY_EXHAUSTED: All retries failed, returning error to caller");
           return Promise.reject(retryError);
         }
       }
+    }
+
+    // Do not retry 429 responses; they are server-side rate limits and retrying usually makes the burst worse.
+    if (error.response?.status === 429) {
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useAuth, useUser } from "@clerk/expo";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   addMealEntry,
   createMealGroup,
@@ -99,13 +100,17 @@ export const useDashboard = () => {
     [user?.id, getToken]
   );
 
-  // Load dashboard only once on mount when user.id is available
-  useEffect(() => {
-    if (!user?.id || hasLoadedRef.current) return;
+  // Load dashboard only when the screen is focused to avoid duplicate tab startup requests
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id || hasLoadedRef.current) {
+        return;
+      }
 
-    hasLoadedRef.current = true;
-    loadDashboard(true);
-  }, [user?.id, loadDashboard]);
+      hasLoadedRef.current = true;
+      loadDashboard(true);
+    }, [user?.id, loadDashboard])
+  );
 
   const handleGroupSubmit = useCallback(
     async (

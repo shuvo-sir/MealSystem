@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
 import { useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
@@ -26,13 +25,6 @@ interface ProfileEditModalProps {
   isLoading: boolean;
   selectedTheme: string;
 }
-
-const AVAILABLE_THEMES = [
-  { name: "light", label: "Light" },
-  { name: "dark", label: "Dark" },
-  { name: "blue", label: "Blue" },
-  { name: "green", label: "Green" },
-];
 
 export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   visible,
@@ -153,7 +145,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             />
           </View>
 
-          <View style={{ marginBottom: 32 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 14, fontWeight: "600", color: COLORS.text, marginBottom: 8 }}>
               Last Name
             </Text>

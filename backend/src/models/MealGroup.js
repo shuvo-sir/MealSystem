@@ -18,6 +18,18 @@ const mealGroupSchema = new mongoose.Schema(
       ref: "User",
     },
 
+    managerDelegation: {
+      previousManager: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      expiresAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
     members: [
       {
         type: mongoose.Schema.Types.ObjectId,

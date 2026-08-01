@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import GroupMembership from "../models/GroupMembership.js";
 import generateCode from "../utils/generateCode.js";
 import calculateMealRate from "../utils/calculateMealRate.js";
+import { resolveExpiredManagerDelegation } from "../utils/managerDelegation.js";
 
 
 // Get meal group details for current user
@@ -24,7 +25,20 @@ export const getMealGroupPayloadForUser = async (user) => {
     };
   }
 
-  const mealGroup = await MealGroup.findById(currentUser.mealGroup)
+  let mealGroupDoc = await MealGroup.findById(currentUser.mealGroup);
+
+  if (!mealGroupDoc) {
+    return {
+      user: currentUser,
+      mealGroup: null,
+      members: [],
+      entries: [],
+    };
+  }
+
+  mealGroupDoc = await resolveExpiredManagerDelegation(mealGroupDoc);
+
+  const mealGroup = await MealGroup.findById(mealGroupDoc._id)
     .populate("members", "name email role balance totalMeals")
     .lean();
 
