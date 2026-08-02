@@ -33,12 +33,7 @@ export const getMyMealGroup = async (token) => {
   }
 
   const request = (async () => {
-    const response = await API.get("/meals/my-group", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+      const response = await API.get("/meals/my-group", authConfig(token));
     myGroupCache.set(cacheKey, {
       data: response.data,
       timestamp: Date.now(),
@@ -59,11 +54,11 @@ export const getMyMealGroup = async (token) => {
 
 // create meal group
 export const createMealGroup = async (data, token) => {
-  const response = await API.post("/meals/create", data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await API.post(
+    "/meals/create",
+    data,
+    authConfig(token)
+  );
 
   invalidateMyMealGroupCache(token);
 
@@ -73,11 +68,11 @@ export const createMealGroup = async (data, token) => {
 
 // join meal
 export const joinMeal = async (data, token) => {
-  const response = await API.post("/member/join", data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await API.post(
+    "/member/join",
+    data,
+    authConfig(token)
+  );
 
   invalidateMyMealGroupCache(token);
 
@@ -87,11 +82,11 @@ export const joinMeal = async (data, token) => {
 
 // add daily meal entry
 export const addMealEntry = async (data, token) => {
-  const response = await API.post("/meal-entries/add", data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await API.post(
+    "/meal-entries/add",
+    data,
+    authConfig(token)
+  );
 
   invalidateMyMealGroupCache(token);
 

@@ -3,6 +3,12 @@ import app from "./app.js";
 import connectDB from "./config/db.js";
 import cron from "./config/cron.js";
 
+if (!process.env.CLERK_SECRET_KEY) {
+  console.error("Missing required environment variable: CLERK_SECRET_KEY");
+  console.error("Clerk authentication cannot work without CLERK_SECRET_KEY. Exiting.");
+  process.exit(1);
+}
+
 const startServer = async () => {
   try {
     await connectDB();

@@ -1,9 +1,23 @@
 import { clerkMiddleware, getAuth } from "@clerk/express";
 
+const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+if (!clerkSecretKey) {
+  console.error("Missing CLERK_SECRET_KEY in backend environment. Clerk auth will not work.");
+}
+
 // Apply Clerk's middleware globally first
-export const applyClerkMiddleware = clerkMiddleware();
+export const applyClerkMiddleware = clerkMiddleware({
+  secretKey: clerkSecretKey,
+});
 
 const normalizeAuth = (req) => {
+  const authHeader = req.headers?.authorization;
+  if (authHeader) {
+    console.log("AUTH HEADER: Bearer token present");
+  } else {
+    console.log("AUTH HEADER: none");
+  }
+
   const clerkAuth = getAuth(req) || {};
   const existingAuth = req.auth || {};
   const userId = clerkAuth.userId || existingAuth.userId || null;
