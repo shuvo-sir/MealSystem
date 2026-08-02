@@ -92,6 +92,16 @@ export default function HomeRoutesLayout() {
       />
 
       <Tabs.Screen
+        name="manager"
+        options={{
+          title: "Manager",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="shield-checkmark" size={22} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
