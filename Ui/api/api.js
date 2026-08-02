@@ -90,13 +90,21 @@ API.interceptors.response.use(
 );
 
 // 2. Helper for authenticated headers
-export const authConfig = (token) =>
-  token
-    ? {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    : {};
+export const authConfig = (token) => {
+  if (!token || typeof token !== "string") {
+    return {};
+  }
+
+  const safeToken = token.trim();
+  if (!safeToken) {
+    return {};
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${safeToken}`,
+    },
+  };
+};
 
 export default API;
