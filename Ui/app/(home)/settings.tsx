@@ -9,7 +9,6 @@ import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
 
 // Hooks
-import { useManagerStatus } from "@/shared/hooks/useManagerStatus";
 import { useSettingsModals } from "@/shared/hooks/useSettingsModals";
 
 // Components
@@ -21,9 +20,6 @@ import { ProfileEditModal } from "@/shared/components/settings/modals/ProfileEdi
 import { PasswordChangeModal } from "@/shared/components/settings/modals/PasswordChangeModal";
 import { NotificationsModal } from "@/shared/components/settings/modals/NotificationsModal";
 import { HelpSupportModal } from "@/shared/components/settings/modals/HelpSupportModal";
-import { GroupInfoModal } from "@/shared/components/settings/modals/GroupInfoModal";
-import { PendingRequestsModal } from "@/shared/components/settings/modals/PendingRequestsModal";
-import { TransferManagerModal } from "@/shared/components/settings/modals/TransferManagerModal";
 
 export default function SettingsScreen() {
   const { signOut } = useClerk();
@@ -33,7 +29,6 @@ export default function SettingsScreen() {
   const [selectedTheme] = useState<string>("deepHarvest");
 
   // Custom hooks
-  const { isManager, userMealGroupId, mealGroupData, isLoading: managerLoading, refreshManagerStatus } = useManagerStatus();
   const { modals, openModal, closeModal } = useSettingsModals();
   // Handlers
   const handleChangeProfilePicture = async () => {
@@ -152,28 +147,6 @@ export default function SettingsScreen() {
       subtitle: "Get help or contact support",
       onPress: () => openModal("helpModal"),
     },
-    ...(isManager && userMealGroupId
-      ? [
-          {
-            icon: "information-circle",
-            title: "Group Info",
-            subtitle: "View group details and invite code",
-            onPress: () => openModal("groupInfoModal"),
-          },
-          {
-            icon: "people",
-            title: "Pending Member Requests",
-            subtitle: "Approve or reject join requests",
-            onPress: () => openModal("pendingRequestsModal"),
-          },
-          {
-            icon: "swap-horizontal",
-            title: "Transfer Manager",
-            subtitle: "Promote a member temporarily or permanently",
-            onPress: () => openModal("transferManagerModal"),
-          },
-        ]
-      : []),
   ];
 
   return (
@@ -265,25 +238,6 @@ export default function SettingsScreen() {
         isLoading={isLoading}
       />
 
-      <GroupInfoModal
-        visible={modals.groupInfoModal}
-        onClose={() => closeModal("groupInfoModal")}
-        mealGroupData={mealGroupData}
-        isLoading={managerLoading}
-      />
-
-      <PendingRequestsModal
-        visible={modals.pendingRequestsModal}
-        onClose={() => closeModal("pendingRequestsModal")}
-        userMealGroupId={userMealGroupId}
-      />
-
-      <TransferManagerModal
-        visible={modals.transferManagerModal}
-        onClose={() => closeModal("transferManagerModal")}
-        mealGroupData={mealGroupData}
-        onTransferSuccess={refreshManagerStatus}
-      />
     </SafeAreaView>
   );
 }
