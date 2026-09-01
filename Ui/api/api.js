@@ -95,14 +95,21 @@ export const authConfig = (token) => {
     return {};
   }
 
-  const safeToken = token.trim();
+    const safeToken = token.trim();
   if (!safeToken) {
+    return {};
+  }
+
+  // Normalize the incoming token so we avoid duplicate Bearer prefixes
+  // and always send a single clean auth value.
+  const tokenWithoutBearer = safeToken.replace(/^Bearer\s*/i, "").trim();
+  if (!tokenWithoutBearer) {
     return {};
   }
 
   return {
     headers: {
-      Authorization: `Bearer ${safeToken}`,
+      Authorization: `Bearer ${tokenWithoutBearer}`,
     },
   };
 };
