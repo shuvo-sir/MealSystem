@@ -1,11 +1,54 @@
 import MealGroup from "../models/MealGroup.js";
 import MealEntry from "../models/MealEntry.js";
+import Deposit from "../models/Deposit.js";
+import Expense from "../models/Expense.js";
 import User from "../models/User.js";
 import GroupMembership from "../models/GroupMembership.js";
 import generateCode from "../utils/generateCode.js";
 import calculateMealRate from "../utils/calculateMealRate.js";
 import { resolveExpiredManagerDelegation } from "../utils/managerDelegation.js";
 
+export const getCurrentMonthDateRange = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const monthStart = new Date(year, month, 1, 0, 0, 0, 0);
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+  const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+  return {
+    monthStart,
+    monthEnd,
+    monthKey,
+    dateFrom: `${monthKey}-01`,
+    dateTo: `${monthKey}-${String(monthEnd.getDate()).padStart(2, "0")}`,
+  };
+};
+
+export const buildMonthSummary = ({ entries = [], deposits = [], expenses = [] }) => {
+  const totalMeals = entries.reduce(
+    (sum, entry) => sum + Number(entry.totalMeals || 0),
+    0
+  );
+
+  const totalDeposit = deposits.reduce(
+    (sum, deposit) => sum + Number(deposit.amount || 0),
+    0
+  );
+
+  const totalExpense = expenses.reduce(
+    (sum, expense) => sum + Number(expense.amount || 0),
+    0
+  );
+
+  return {
+    totalExpense,
+    totalDeposit,
+    totalMeals,
+    mealRate: calculateMealRate(totalExpense, totalMeals),
+  };
+};
 
 // Get meal group details for current user
 
@@ -51,28 +94,45 @@ export const getMealGroupPayloadForUser = async (user) => {
     };
   }
 
+  const { monthStart, monthEnd, dateFrom, dateTo } = getCurrentMonthDateRange();
+
   const entries = await MealEntry.find({
     mealGroup: mealGroup._id,
+    date: {
+      $gte: dateFrom,
+      $lte: dateTo,
+    },
   })
     .populate("user", "name email")
     .sort({ date: 1, createdAt: 1 })
     .lean();
 
-  const totalMeals = entries.reduce(
-    (sum, entry) => sum + entry.totalMeals,
-    0
-  );
-  const mealRate = calculateMealRate(
-    mealGroup.totalExpense,
-    totalMeals
-  );
+  const deposits = await Deposit.find({
+    mealGroup: mealGroup._id,
+    createdAt: {
+      $gte: monthStart,
+      $lte: monthEnd,
+    },
+  }).lean();
+
+  const expenses = await Expense.find({
+    mealGroup: mealGroup._id,
+    createdAt: {
+      $gte: monthStart,
+      $lte: monthEnd,
+    },
+  }).lean();
+
+  const monthSummary = buildMonthSummary({ entries, deposits, expenses });
 
   return {
     user: currentUser,
     mealGroup: {
       ...mealGroup,
-      totalMeals,
-      mealRate,
+      totalExpense: monthSummary.totalExpense,
+      totalDeposit: monthSummary.totalDeposit,
+      totalMeals: monthSummary.totalMeals,
+      mealRate: monthSummary.mealRate,
     },
     members: mealGroup.members,
     entries,

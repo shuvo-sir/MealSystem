@@ -8,6 +8,7 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@clerk/expo";
@@ -208,7 +209,7 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -227,7 +228,6 @@ const styles = {
     padding: 24,
     width: "88%",
     maxWidth: 420,
-    marginHorizontal: "auto" as any,
   },
   header: {
     flexDirection: "row" as const,
@@ -305,7 +305,8 @@ const styles = {
     marginBottom: 8,
   },
   durationButton: {
-    minWidth: "47%" as any,
+    flexBasis: "47%" as const,
+    flexGrow: 1,
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 10,
@@ -357,4 +358,4 @@ const styles = {
     fontWeight: "600" as const,
     color: "#fff",
   },
-};
+});

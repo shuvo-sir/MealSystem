@@ -130,10 +130,11 @@ export default function MyMealScreen() {
 
     // Initialize map with all members and days
     allMembers.forEach((member) => {
-      memberMap.set(member._id, new Map());
+      const memberDays = new Map<string, number>();
+      memberMap.set(member._id, memberDays);
       for (let i = 1; i <= daysCount; i++) {
         const dayKey = `day${i}`;
-        memberMap.get(member._id).set(dayKey, 0);
+        memberDays.set(dayKey, 0);
       }
     });
 

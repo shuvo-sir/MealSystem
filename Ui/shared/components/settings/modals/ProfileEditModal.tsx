@@ -20,10 +20,9 @@ import { styles } from "@/assets/styles/home.styles";
 interface ProfileEditModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (firstName: string, lastName: string, theme: string) => Promise<void>;
+  onSave: (firstName: string, lastName: string) => Promise<void>;
   onChangeProfilePicture: () => Promise<void>;
   isLoading: boolean;
-  selectedTheme: string;
 }
 
 export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
@@ -32,16 +31,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   onSave,
   onChangeProfilePicture,
   isLoading,
-  selectedTheme,
 }) => {
   const { user } = useUser();
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
-  const [currentTheme, setCurrentTheme] = useState(selectedTheme);
 
   const handleUpdateProfile = async () => {
     try {
-      await onSave(firstName, lastName, currentTheme);
+      await onSave(firstName, lastName);
       Alert.alert("Success", "Profile updated successfully!");
     } catch (error) {
       Alert.alert("Error", "Failed to update profile");

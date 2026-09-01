@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -144,7 +145,7 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -163,7 +164,6 @@ const styles = {
     padding: 24,
     width: "85%",
     maxWidth: 400,
-    marginHorizontal: "auto" as any,
   },
   header: {
     flexDirection: "row" as const,
@@ -245,4 +245,4 @@ const styles = {
     fontWeight: "600" as const,
     color: "#fff",
   },
-};
+});

@@ -14,13 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
-
-interface NotificationPreferences {
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  mealReminders: boolean;
-  frequency: "daily" | "weekly" | "none";
-}
+import { getNotificationPreferences, NotificationPreferences } from "@/utils/storageService";
 
 interface NotificationsModalProps {
   visible: boolean;
@@ -29,20 +23,23 @@ interface NotificationsModalProps {
   isLoading: boolean;
 }
 
-const DEFAULT_PREFS: NotificationPreferences = {
-  pushEnabled: true,
-  emailEnabled: true,
-  mealReminders: true,
-  frequency: "daily",
-};
-
 export const NotificationsModal: React.FC<NotificationsModalProps> = ({
   visible,
   onClose,
   onSave,
   isLoading,
 }) => {
-  const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_PREFS);
+  const [prefs, setPrefs] = useState<NotificationPreferences>({
+    pushEnabled: true,
+    emailEnabled: true,
+    mealReminders: true,
+    frequency: "daily",
+  });
+
+  React.useEffect(() => {
+    if (!visible) return;
+    getNotificationPreferences().then(setPrefs);
+  }, [visible]);
 
   const handleSave = async () => {
     try {

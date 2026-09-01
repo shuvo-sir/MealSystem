@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,6 +31,13 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const completionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (completionTimer.current) {
+      clearTimeout(completionTimer.current);
+    }
+  }, []);
 
   const handleJoinGroup = async () => {
     if (!inviteCode.trim()) {
@@ -42,7 +50,7 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
       await joinMeal({ inviteCode: inviteCode.trim() });
       setSubmitted(true);
       setInviteCode("");
-      setTimeout(() => {
+      completionTimer.current = setTimeout(() => {
         onJoinSuccess();
         onClose();
       }, 2000);
@@ -58,6 +66,10 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
   };
 
   const handleClose = () => {
+    if (completionTimer.current) {
+      clearTimeout(completionTimer.current);
+      completionTimer.current = null;
+    }
     setInviteCode("");
     setSubmitted(false);
     onClose();
@@ -113,7 +125,7 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
                 onChangeText={setInviteCode}
                 editable={!isLoading}
                 maxLength={50}
-                autoCapitalize="upper"
+                autoCapitalize="characters"
                 returnKeyType="done"
                 onSubmitEditing={handleJoinGroup}
               />
@@ -157,7 +169,7 @@ export const JoinAnotherGroupModal: React.FC<JoinAnotherGroupModalProps> = ({
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -176,7 +188,6 @@ const styles = {
     padding: 24,
     width: "85%",
     maxWidth: 400,
-    marginHorizontal: "auto" as any,
   },
   header: {
     flexDirection: "row" as const,
@@ -290,4 +301,4 @@ const styles = {
     lineHeight: 20,
     marginBottom: 24,
   },
-};
+});
