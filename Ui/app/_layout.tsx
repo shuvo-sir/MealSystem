@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 
 import AnimatedSplash from "../components/AnimatedSplash";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 // Keep native splash active during engine boot
 SplashScreen.preventAutoHideAsync();
@@ -82,43 +82,52 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  const onSplashFinish = useCallback(() => {
+    setShowAnimatedSplash(false);
+  }, []);
+
   // Wait underneath the native splash screen until font resources are ready
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  if (!publishableKey) {
-    console.error("Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in app bootstrap");
-    return <MissingConfigScreen />;
-  }
-
-  // Show your beautiful custom splash screen sequence
-  if (showAnimatedSplash) {
-    return (
-      <View style={{ flex: 1 }} onLayout={onCustomSplashLayout}>
-        <AnimatedSplash
-          onFinish={() => setShowAnimatedSplash(false)}
-        />
-      </View>
-    );
-  }
-
-  // Once custom splash finishes, display the actual app!
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ClerkProvider
-        publishableKey={publishableKey}
-        tokenCache={tokenCache}
-      >
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: COLORS.background,
-            },
-          }}
-        />
-      </ClerkProvider>
-    </SafeAreaProvider>
+    <View style={styles.root}>
+      {publishableKey ? (
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+          <ClerkProvider
+            publishableKey={publishableKey}
+            tokenCache={tokenCache}
+          >
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: COLORS.background,
+                },
+              }}
+            />
+          </ClerkProvider>
+        </SafeAreaProvider>
+      ) : (
+        <MissingConfigScreen />
+      )}
+
+      {showAnimatedSplash && (
+        <View style={styles.splashOverlay} onLayout={onCustomSplashLayout}>
+          <AnimatedSplash onFinish={onSplashFinish} />
+        </View>
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  splashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+  },
+});

@@ -23,14 +23,12 @@ export default function HomeScreen() {
     refreshing,
     actionLoading,
     errorMessage,
-    isRetrying,
     todayEntry,
     loadDashboard,
     handleGroupSubmit,
     handleSaveMealEntry,
     handleAddNote,
     handleDeleteNote,
-    handleRetry,
     handleLeaveGroup,
   } = useDashboard();
 
@@ -135,7 +133,6 @@ export default function HomeScreen() {
       todayEntry={todayEntry}
       isActionLoading={actionLoading}
       refreshing={refreshing}
-      isRetrying={isRetrying}
       errorMessage={errorMessage}
       onMealSelect={handleMealSelect}
       onSaveMealEntry={handleSaveMeal}
@@ -143,7 +140,6 @@ export default function HomeScreen() {
       onAddNote={handleAddNoteAction}
       onDeleteNote={handleDeleteNote}
       onRefresh={() => loadDashboard(false)}
-      onRetry={handleRetry}
       avatarImageFailed={avatarImageFailed}
       onAvatarImageFailed={setAvatarImageFailed}
       userName={userName}

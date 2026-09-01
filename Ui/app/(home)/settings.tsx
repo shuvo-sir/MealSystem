@@ -20,13 +20,16 @@ import { ProfileEditModal } from "@/shared/components/settings/modals/ProfileEdi
 import { PasswordChangeModal } from "@/shared/components/settings/modals/PasswordChangeModal";
 import { NotificationsModal } from "@/shared/components/settings/modals/NotificationsModal";
 import { HelpSupportModal } from "@/shared/components/settings/modals/HelpSupportModal";
+import {
+  saveNotificationPreferences,
+  NotificationPreferences,
+} from "@/utils/storageService";
 
 export default function SettingsScreen() {
   const { signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedTheme] = useState<string>("deepHarvest");
 
   // Custom hooks
   const { modals, openModal, closeModal } = useSettingsModals();
@@ -215,7 +218,6 @@ export default function SettingsScreen() {
         onSave={handleUpdateProfile}
         onChangeProfilePicture={handleChangeProfilePicture}
         isLoading={isLoading}
-        selectedTheme={selectedTheme}
       />
 
       <PasswordChangeModal
@@ -228,7 +230,12 @@ export default function SettingsScreen() {
       <NotificationsModal
         visible={modals.notificationsModal}
         onClose={() => closeModal("notificationsModal")}
-        onSave={async () => {}} // Add save preferences logic
+        onSave={async (prefs: NotificationPreferences) => {
+          const saved = await saveNotificationPreferences(prefs);
+          if (!saved) {
+            throw new Error("Unable to save notification preferences");
+          }
+        }}
         isLoading={isLoading}
       />
 
