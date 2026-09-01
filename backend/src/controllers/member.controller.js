@@ -254,25 +254,28 @@ export const leaveGroup = async (req, res) => {
     await resolveExpiredManagerDelegation(group);
     const freshGroup = await MealGroup.findById(group._id);
 
-    if (freshGroup.manager?.toString() === user._id.toString()) {
+    const remainingMembers = (freshGroup.members || []).filter(
+      (memberId) => memberId.toString() !== user._id.toString()
+    );
+
+    const isOwner = freshGroup.owner?.toString() === user._id.toString();
+    const isManager = freshGroup.manager?.toString() === user._id.toString() && freshGroup.owner?.toString() !== user._id.toString();
+
+    if (isOwner && remainingMembers.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "You need to upgrade someone else to manager before leaving the group.",
+        message: "You must transfer ownership to another member before leaving the group.",
       });
     }
 
-    if (
-      freshGroup.managerDelegation?.previousManager?.toString() === user._id.toString() &&
-      freshGroup.managerDelegation?.expiresAt &&
-      new Date(freshGroup.managerDelegation.expiresAt) > new Date()
-    ) {
+    if (isManager && remainingMembers.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "You need to permanently upgrade someone else to manager before leaving the group.",
+        message: "You must promote a member to manager before leaving the group.",
       });
     }
 
-    const groupName = group.groupName;
+    const groupName = freshGroup.groupName;
 
     const activeMembership = await GroupMembership.findOne({
       user: user._id,
@@ -286,28 +289,42 @@ export const leaveGroup = async (req, res) => {
       await activeMembership.save();
     }
 
-    // Remove user from group's members array
-    group.members = group.members.filter(
-      (memberId) => memberId.toString() !== user._id.toString()
-    );
-    await group.save();
+    if (remainingMembers.length === 0) {
+      await GroupMembership.deleteMany({ mealGroup: freshGroup._id });
+      await JoinRequest.deleteMany({ mealGroup: freshGroup._id });
+      await MealGroup.findByIdAndDelete(freshGroup._id);
+    } else {
+      freshGroup.members = remainingMembers;
 
-    // Clear user's mealGroup field
+      if (freshGroup.owner?.toString() === user._id.toString()) {
+        freshGroup.owner = remainingMembers[0];
+      }
+
+      if (freshGroup.manager?.toString() === user._id.toString()) {
+        freshGroup.manager = remainingMembers[0];
+      }
+
+      await freshGroup.save();
+    }
+
     user.mealGroup = null;
+    user.role = "member";
     await user.save();
 
-    // Clear any pending join requests for this user
     await JoinRequest.updateMany(
-      { user: user._id, mealGroup: group._id },
+      { user: user._id, mealGroup: freshGroup._id },
       { status: "rejected" }
     );
 
-    console.log(`[leaveGroup] User ${user._id} successfully left group ${group._id}`);
+    console.log(`[leaveGroup] User ${user._id} successfully left group ${freshGroup._id}`);
 
     res.json({
       success: true,
-      message: `You have left the group "${groupName}"`,
+      message: remainingMembers.length === 0
+        ? `You left the last member slot and the group "${groupName}" was dissolved.`
+        : `You have left the group "${groupName}"`,
       groupName,
+      dissolved: remainingMembers.length === 0,
     });
   } catch (error) {
     console.log(`[leaveGroup] Error: ${error.message}`);
@@ -355,6 +372,13 @@ export const transferManager = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Selected member not found",
+      });
+    }
+
+    if (group.owner?.toString() !== currentManager._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the current owner can appoint a new owner or transfer leadership authority.",
       });
     }
 

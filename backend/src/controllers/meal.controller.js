@@ -248,6 +248,7 @@ export const createMealGroup = async (req, res) => {
     const mealGroup = await MealGroup.create({
       groupName,
       inviteCode,
+      owner: user._id,
       manager: user._id,
       members: [user._id],
     });
@@ -258,7 +259,7 @@ export const createMealGroup = async (req, res) => {
       status: "active",
     });
 
-    user.role = "manager";
+    user.role = "owner";
     user.mealGroup = mealGroup._id;
 
     await user.save();

@@ -13,6 +13,12 @@ const mealGroupSchema = new mongoose.Schema(
       required: true,
     },
 
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     manager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
