@@ -21,7 +21,15 @@ const isGroupManager = async (userId, groupId) => {
     }
 
     group = await resolveExpiredManagerDelegation(group);
-    return group && group.manager.toString() === userId.toString();
+    if (!group) {
+      return false;
+    }
+
+    const userIdString = userId.toString();
+    return (
+      group.owner?.toString() === userIdString ||
+      group.manager?.toString() === userIdString
+    );
   } catch (error) {
     console.error('[authorizationHelpers] isGroupManager error:', error.message);
     return false;
@@ -102,12 +110,15 @@ const isUserInGroup = async (userId, groupId) => {
  */
 const getUserRoleInGroup = async (userId, groupId) => {
   try {
-    const isManager = await isGroupManager(userId, groupId);
-    if (isManager) return 'manager';
-    
+    const group = await MealGroup.findById(groupId);
+    if (!group) return 'none';
+
+    if (group.owner?.toString() === userId.toString()) return 'owner';
+    if (group.manager?.toString() === userId.toString()) return 'manager';
+
     const isMember = await isMemberOfGroup(userId, groupId);
     if (isMember) return 'member';
-    
+
     return 'none';
   } catch (error) {
     console.error('[authorizationHelpers] getUserRoleInGroup error:', error.message);

@@ -50,7 +50,11 @@ export const syncGroupManagerRoles = async (group) => {
     );
   }
 
-  if (group.manager) {
+  if (group.owner) {
+    await User.findByIdAndUpdate(group.owner, { role: "owner" });
+  }
+
+  if (group.manager && group.manager.toString() !== group.owner?.toString()) {
     await User.findByIdAndUpdate(group.manager, { role: "manager" });
   }
 };
