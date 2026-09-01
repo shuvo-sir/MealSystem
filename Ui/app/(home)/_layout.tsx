@@ -36,11 +36,15 @@ export default function HomeRoutesLayout() {
           height: 64,
           backgroundColor: COLORS.white,
           elevation: 8,
-          borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          paddingTop: 6,
-          paddingBottom: 6,
+          borderWidth: 2,
+          borderColor: COLORS.border,
           shadowColor: COLORS.primary,
+          paddingHorizontal: 12,
+          marginHorizontal: 12,
+          borderRadius: 19,
+          marginBottom: 25,
+
+
           shadowOffset: {
             width: 0,
             height: 3,

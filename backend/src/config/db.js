@@ -2,14 +2,13 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   if (!process.env.MONGO_URI) {
-    console.warn("⚠️ MONGO_URI is not configured. Skipping MongoDB connection.");
-    return false;
+    throw new Error("MONGO_URI is not configured. Please set it before starting the backend.");
   }
 
   try {
     console.log("🔗 Attempting MongoDB connection...");
     console.log("MONGO_URI present:", !!process.env.MONGO_URI);
-    
+
     await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
     });
@@ -21,8 +20,7 @@ const connectDB = async () => {
     console.error("❌ MongoDB Connection Error:", error.message);
     console.error("Error Code:", error.code);
     console.error("Full Error:", error);
-    console.warn("⚠️ Server startup continues, but database operations may fail.");
-    return false;
+    throw new Error(`MongoDB connection failed: ${error.message}`);
   }
 };
 
