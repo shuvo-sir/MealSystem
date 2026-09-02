@@ -101,15 +101,18 @@ export const addExpense = async (
       });
     }
 
-    // only manager can add expense
+    // only owner or manager can add expense
     const group = await MealGroup.findById(user.mealGroup);
-    const isManager = group && group.manager.toString() === user._id.toString();
+    const isAuthorized = group && (
+      group.owner?.toString() === user._id.toString() ||
+      group.manager?.toString() === user._id.toString()
+    );
 
-    if (!isManager) {
+    if (!isAuthorized) {
       return res.status(403).json({
         success: false,
         message:
-          "Only manager can add expense",
+          "Only owner or manager can add expense",
         code: "FORBIDDEN",
       });
     }
@@ -174,10 +177,10 @@ export const addFinanceAdjustment = async (
 
     const group = await MealGroup.findById(manager.mealGroup);
 
-    if (!group || group.manager.toString() !== manager._id.toString()) {
+    if (!group || (group.owner?.toString() !== manager._id.toString() && group.manager?.toString() !== manager._id.toString())) {
       return res.status(403).json({
         success: false,
-        message: "Only manager can add credit or due adjustments",
+        message: "Only owner or manager can add credit or due adjustments",
         code: "FORBIDDEN",
       });
     }

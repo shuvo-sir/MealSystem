@@ -21,6 +21,7 @@ import { BackendUser, MealEntry, MealGroup, GroupNote } from "../types/homeScree
 import { formatNoteDate } from "../utils/homeScreenHelpers";
 import { LeaveGroupModal } from "@/shared/components/settings/modals/LeaveGroupModal";
 import { JoinAnotherGroupModal } from "@/shared/components/settings/modals/JoinAnotherGroupModal";
+import { DeveloperReveal } from "@/shared/components/DeveloperReveal";
 
 interface DashboardScreenProps {
   backendUser: BackendUser | null;
@@ -132,6 +133,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
+      <DeveloperReveal />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -531,7 +533,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <Text style={styles.noteItemText}>{member.name}</Text>
                     <Text style={styles.noteItemTimestamp}>
                       {member.email} •{" "}
-                      {member.role === "manager"
+                      {member.role === "owner"
+                        ? "👑 Owner"
+                        : member.role === "manager"
                         ? "👨‍💼 Manager"
                         : "👤 Member"}
                     </Text>
@@ -551,6 +555,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         onLeaveSuccess={handleLeaveGroupSuccess}
         leaveMealGroup={onLeaveGroup}
         isManager={backendUser?.role === "manager"}
+        isOwner={backendUser?.role === "owner"}
       />
 
       {/* Join Another Group Modal */}
