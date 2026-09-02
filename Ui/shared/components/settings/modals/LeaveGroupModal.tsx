@@ -20,6 +20,7 @@ interface LeaveGroupModalProps {
   onLeaveSuccess: () => void;
   leaveMealGroup: () => Promise<void>;
   isManager?: boolean;
+  isOwner?: boolean;
 }
 
 export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
@@ -29,6 +30,7 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
   onLeaveSuccess,
   leaveMealGroup,
   isManager = false,
+  isOwner = false,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,10 +40,18 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
       return;
     }
 
+    if (isOwner) {
+      Alert.alert(
+        "Owner action required",
+        "You must transfer ownership to another member before leaving the group."
+      );
+      return;
+    }
+
     if (isManager) {
       Alert.alert(
         "Manager action required",
-        "You need to permanently upgrade someone else to manager before leaving the group."
+        "You must promote a member to manager before leaving the group."
       );
       return;
     }
@@ -96,11 +106,15 @@ export const LeaveGroupModal: React.FC<LeaveGroupModalProps> = ({
                 Once you leave this group, you will lose access to all group data
                 and meal history. You can rejoin with a new invite code.
               </Text>
-              {isManager && (
+              {isOwner ? (
                 <Text style={[styles.warningMessage, { marginTop: 12, color: COLORS.primary, fontWeight: "600" }]}>
-                  You are the manager. Permanently transfer manager role to another member first.
+                  You are the group owner. Transfer ownership to another member first.
                 </Text>
-              )}
+              ) : isManager ? (
+                <Text style={[styles.warningMessage, { marginTop: 12, color: COLORS.primary, fontWeight: "600" }]}>
+                  You are the manager. Promote a member to manager first.
+                </Text>
+              ) : null}
             </View>
 
             <View style={styles.infoSection}>

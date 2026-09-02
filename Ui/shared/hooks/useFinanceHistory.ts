@@ -68,7 +68,7 @@ export const useFinanceHistory = () => {
   );
 
   const isManager = useMemo(
-    () => backendUser?.role === "manager",
+    () => backendUser?.role === "manager" || backendUser?.role === "owner",
     [backendUser?.role]
   );
 

@@ -16,6 +16,7 @@ import { useUser } from "@clerk/expo";
 import { COLORS } from "@/constants/colors";
 import { styles } from "@/assets/styles/home.styles";
 import { GroupAction } from "../types/homeScreen.types";
+import { DeveloperReveal } from "@/shared/components/DeveloperReveal";
 
 interface NoGroupScreenProps {
   groupAction: GroupAction;
@@ -48,6 +49,7 @@ export const NoGroupScreen: React.FC<NoGroupScreenProps> = ({
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.container}>
+      <DeveloperReveal />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}

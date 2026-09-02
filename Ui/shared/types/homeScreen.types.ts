@@ -2,7 +2,7 @@ export type BackendUser = {
   _id: string;
   name: string;
   email: string;
-  role: "member" | "manager";
+  role: "member" | "manager" | "owner";
   mealGroup?: string | null;
   balance: number;
   totalMeals: number;
@@ -16,6 +16,9 @@ export type MealGroup = {
   totalDeposit: number;
   totalMeals: number;
   mealRate: number;
+  owner?: string;
+  manager?: string;
+  members?: any[];
 };
 
 export type MealEntry = {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -45,6 +45,7 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
   const { getToken } = useAuth();
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   const getApiErrorMessage = (error: any, fallback: string) => {
     return error?.response?.data?.message || error?.message || fallback;
@@ -105,7 +106,12 @@ export const PendingRequestsModal: React.FC<PendingRequestsModalProps> = ({
 
   useEffect(() => {
     if (visible && userMealGroupId) {
-      loadPendingRequests();
+      if (!hasLoadedRef.current) {
+        hasLoadedRef.current = true;
+        loadPendingRequests();
+      }
+    } else {
+      hasLoadedRef.current = false;
     }
   }, [visible, userMealGroupId, loadPendingRequests]);
 

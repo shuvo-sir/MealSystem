@@ -28,6 +28,7 @@ interface TransferManagerModalProps {
   onClose: () => void;
   mealGroupData: any;
   onTransferSuccess: () => void;
+  isOwner?: boolean;
 }
 
 export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
@@ -35,6 +36,7 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
   onClose,
   mealGroupData,
   onTransferSuccess,
+  isOwner = false,
 }) => {
   const { getToken } = useAuth();
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -42,12 +44,14 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const availableMembers = useMemo(() => {
-    const currentManagerId = mealGroupData?.manager?.toString?.() || mealGroupData?.manager;
+    const currentId = isOwner
+      ? (mealGroupData?.owner?.toString?.() || mealGroupData?.owner)
+      : (mealGroupData?.manager?.toString?.() || mealGroupData?.manager);
     return (mealGroupData?.members || []).filter((member: any) => {
       if (!member?._id) return false;
-      return member._id.toString() !== currentManagerId?.toString();
+      return member._id.toString() !== currentId?.toString();
     });
-  }, [mealGroupData]);
+  }, [mealGroupData, isOwner]);
 
   useEffect(() => {
     if (!visible) {
@@ -83,11 +87,19 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
         token
       );
 
-      Alert.alert("Success", response?.message || "Manager transferred successfully");
+      Alert.alert(
+        "Success",
+        response?.message || (isOwner ? "Ownership transferred successfully" : "Manager transferred successfully")
+      );
       await onTransferSuccess();
       onClose();
     } catch (error: any) {
-      Alert.alert("Error", error?.response?.data?.message || error?.message || "Failed to transfer manager");
+      Alert.alert(
+        "Error",
+        error?.response?.data?.message ||
+          error?.message ||
+          (isOwner ? "Failed to transfer ownership" : "Failed to transfer manager")
+      );
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +111,9 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
         <SafeAreaView style={styles.container}>
           <View style={styles.modalContent}>
             <View style={styles.header}>
-              <Text style={styles.title}>Transfer Manager</Text>
+              <Text style={styles.title}>
+                {isOwner ? "Transfer Ownership" : "Delegate Manager"}
+              </Text>
               <Pressable onPress={onClose}>
                 <Ionicons name="close-circle-outline" size={28} color={COLORS.primary} />
               </Pressable>
@@ -107,15 +121,24 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
 
             <View style={styles.warningSection}>
               <View style={styles.warningIcon}>
-                <Ionicons name="shield-checkmark-outline" size={32} color={COLORS.primary} />
+                <Ionicons
+                  name={isOwner ? "crown-outline" : "shield-checkmark-outline"}
+                  size={32}
+                  color={COLORS.primary}
+                />
               </View>
-              <Text style={styles.warningTitle}>Choose a new manager</Text>
+              <Text style={styles.warningTitle}>
+                {isOwner ? "Choose new owner" : "Choose a new manager"}
+              </Text>
               <Text style={styles.warningMessage}>
-                Select an existing member and choose how long they should stay manager.
-                Temporary manager roles automatically revert after the selected duration.
+                {isOwner
+                  ? "Select an existing member to transfer group ownership to. Only one owner can lead the group at any time."
+                  : "Select an existing member and choose how long they should stay manager. Temporary manager roles automatically revert after the selected duration."}
               </Text>
               <Text style={[styles.warningMessage, { marginTop: 10, color: COLORS.primary, fontWeight: "600" }]}>
-                If you want to leave the group, choose Permanent.
+                {isOwner
+                  ? "Transfer is permanent. You will become a regular member."
+                  : "If you want to leave the group, choose Permanent."}
               </Text>
             </View>
 
@@ -197,7 +220,9 @@ export const TransferManagerModal: React.FC<TransferManagerModalProps> = ({
                 ) : (
                   <>
                     <Ionicons name="swap-horizontal" size={20} color="#fff" />
-                    <Text style={styles.transferButtonText}>Transfer Manager</Text>
+                    <Text style={styles.transferButtonText}>
+                      {isOwner ? "Transfer Ownership" : "Delegate Manager"}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
