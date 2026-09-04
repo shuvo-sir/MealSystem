@@ -213,6 +213,19 @@ const midnightBerryTheme = {
   shadow: "#000000",
 };
 
+const darkSlateTheme = {
+  primary: "#6366F1",     // Bright Sky Blue
+  background: "#0F172A",  // Deep Slate / Very Dark Navy
+  text: "#FFFFFF",        // Pure White
+  border: "#334155",      // Dark Gray / Mid-tone Slate
+  white: "#FFFFFF",
+  textLight: "#94A3B8",   // Cool Gray
+  expense: "#EF4444",     // Vivid Red for expenses
+  income: "#10B981",      // Emerald Green for income
+  card: "#1E293B",        // Dark Slate (Slightly lighter than background)
+  shadow: "#000000",
+};
+
 
 
 const THEMES = {
@@ -232,10 +245,11 @@ const THEMES = {
   spicedCacao: spicedCacaoTheme,
   midnightBerry: midnightBerryTheme,
   custom: customTheme,
+  darkSlate: darkSlateTheme,
 };
 
 // 👇 change this to switch theme
-export const COLORS = THEMES.garden; // default theme is custom
+export const COLORS = THEMES.darkSlate; // default theme is custom
 
 // Helper function to get theme by name
 export const getThemeByName = (themeName) => {

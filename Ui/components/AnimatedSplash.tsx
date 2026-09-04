@@ -4,6 +4,8 @@ import {
   StyleSheet,
   Animated,
 } from "react-native";
+import { COLORS } from "../constants/colors";
+
 
 export default function AnimatedSplash({
   onFinish,
@@ -81,9 +83,16 @@ export default function AnimatedSplash({
         Meal Management
       </Animated.Text>
 
-      <Text style={styles.subtitle}>
+      {/* Replaced fixed color with Animated.Text just to safely handle the fade out if needed, 
+          though standard Text works here too. Let's keep it consistent. */}
+      <Animated.Text 
+        style={[
+          styles.subtitle,
+          { opacity: fadeAnim }
+        ]}
+      >
         Manage meals smarter
-      </Text>
+      </Animated.Text>
     </Animated.View>
   );
 }
@@ -91,7 +100,7 @@ export default function AnimatedSplash({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E6F4FE",
+    backgroundColor: COLORS.background, // 👈 Uses theme background
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -106,12 +115,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 28,
     fontWeight: "700",
-    color: "#1E293B",
+    color: COLORS.text, // 👈 Uses theme primary text color
   },
 
   subtitle: {
     marginTop: 8,
     fontSize: 14,
-    color: "#64748B",
+    color: COLORS.textLight, // 👈 Uses theme secondary/light text color
   },
 });
