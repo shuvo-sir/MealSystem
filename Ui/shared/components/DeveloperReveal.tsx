@@ -1,18 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Text, View } from "react-native";
+import { 
+  Animated, 
+  Text, 
+  View, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Linking 
+} from "react-native";
 import { Accelerometer } from "expo-sensors";
-import { styles } from "@/assets/styles/home.styles";
+// IMPORTANT: Update this path to wherever your colors.js file is located
+import { COLORS } from "@/constants/colors"; 
 
 const SHAKE_THRESHOLD = 1.8;
-const SHOW_DURATION_MS = 2500;
 const MIN_COOLDOWN_MS = 1800;
 
 export const DeveloperReveal: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.85)).current;
+  const scale = useRef(new Animated.Value(0.95)).current;
   const lastShakeRef = useRef(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isShowingRef = useRef(false);
 
   useEffect(() => {
     const subscription = Accelerometer.addListener(({ x, y, z }) => {
@@ -21,42 +28,42 @@ export const DeveloperReveal: React.FC = () => {
 
       if (magnitude > SHAKE_THRESHOLD && now - lastShakeRef.current > MIN_COOLDOWN_MS) {
         lastShakeRef.current = now;
-        setIsVisible(true);
 
-        Animated.parallel([
-          Animated.timing(opacity, {
-            toValue: 1,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scale, {
-            toValue: 1,
-            friction: 6,
-            tension: 100,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        if (!isShowingRef.current) {
+          isShowingRef.current = true;
+          setIsVisible(true);
 
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
+          Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 250,
+              useNativeDriver: true,
+            }),
+            Animated.spring(scale, {
+              toValue: 1,
+              friction: 8,
+              tension: 80,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        } else {
+          isShowingRef.current = false;
 
-        timeoutRef.current = setTimeout(() => {
           Animated.parallel([
             Animated.timing(opacity, {
               toValue: 0,
-              duration: 220,
+              duration: 200,
               useNativeDriver: true,
             }),
             Animated.timing(scale, {
-              toValue: 0.85,
-              duration: 220,
+              toValue: 0.95,
+              duration: 200,
               useNativeDriver: true,
             }),
           ]).start(() => {
             setIsVisible(false);
           });
-        }, SHOW_DURATION_MS);
+        }
       }
     });
 
@@ -64,11 +71,12 @@ export const DeveloperReveal: React.FC = () => {
 
     return () => {
       subscription.remove();
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
     };
   }, [opacity, scale]);
+
+  const handleSupportEmail = () => {
+    Linking.openURL("mailto:support@mealapp.com?subject=MealApp Problem Report");
+  };
 
   if (!isVisible) {
     return null;
@@ -76,14 +84,144 @@ export const DeveloperReveal: React.FC = () => {
 
   return (
     <Animated.View
-      pointerEvents="none"
-      style={[styles.devRevealOverlay, { opacity, transform: [{ scale }] }]}
+      style={[styles.fullScreen, { opacity, transform: [{ scale }] }]}
     >
-      <View style={styles.devRevealCard}>
-        <Text style={styles.devRevealBadge}>Developer</Text>
-        <Text style={styles.devRevealName}>Shuvo Halder</Text>
-        <Text style={styles.devRevealText}>Built with care</Text>
+      <View style={styles.contentContainer}>
+        {/* Header / Developer Info */}
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>Developer Mode</Text>
+        </View>
+        
+        <Text style={styles.name}>Shuvo Halder</Text>
+        <Text style={styles.tagline}>Built with care</Text>
+
+        <View style={styles.divider} />
+
+        {/* App Info & Copyright */}
+        <Text style={styles.appInfo}>MealApp v1.0.0</Text>
+        <Text style={styles.copyright}>© 2026 All rights reserved</Text>
+
+        {/* Clickable Support Email */}
+        <TouchableOpacity 
+          style={styles.emailButton} 
+          onPress={handleSupportEmail}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.emailIcon}>📧</Text>
+          <Text style={styles.emailText}>support@mealapp.com</Text>
+        </TouchableOpacity>
+        <Text style={styles.emailHint}>Tap to report a problem</Text>
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.shakeHint}>📱 Shake again to return</Text>
       </View>
     </Animated.View>
   );
 };
+
+const styles = StyleSheet.create({
+  fullScreen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.background, 
+    zIndex: 9999,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  contentContainer: {
+    alignItems: "center",
+    width: "100%",
+    flex: 1,
+    justifyContent: "center",
+  },
+  badgeContainer: {
+    backgroundColor: COLORS.card,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  badgeText: {
+    color: COLORS.primary,
+    fontWeight: "700",
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+  },
+  name: {
+    fontSize: 34,
+    fontWeight: "800",
+    color: COLORS.text,
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  tagline: {
+    fontSize: 18,
+    color: COLORS.textLight,
+    fontWeight: "500",
+    fontStyle: "italic",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    width: "60%",
+    marginVertical: 32,
+  },
+  appInfo: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  copyright: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginBottom: 32,
+  },
+  emailButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
+  },
+  emailIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  emailText: {
+    fontSize: 16,
+    color: COLORS.white, // Using white so it always contrasts nicely with the primary button color
+    fontWeight: "600",
+  },
+  emailHint: {
+    fontSize: 13,
+    color: COLORS.textLight,
+  },
+  footer: {
+    paddingBottom: 40,
+  },
+  shakeHint: {
+    color: COLORS.textLight,
+    fontSize: 14,
+    fontWeight: "500",
+    letterSpacing: 0.5,
+  },
+});

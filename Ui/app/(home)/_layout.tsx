@@ -31,37 +31,42 @@ export default function HomeRoutesLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.border,
+        tabBarInactiveTintColor: COLORS.textLight, // textLight usually looks better for inactive icons
         tabBarStyle: {
-          height: 64,
-          backgroundColor: COLORS.white,
-          elevation: 8,
-          borderWidth: 2,
+          position: "absolute", // 🌟 CRITICAL: This is what makes it float!
+          bottom: 36,           // Lifts it off the bottom edge
+          marginHorizontal: 20,  // Adds space on the left and right
+          height: 56,
+          backgroundColor: COLORS.card, // Using your theme's card color
+          borderRadius: 20,     // High border radius for a pill shape
+          
+          // Borders
+          borderWidth: 1,
           borderColor: COLORS.border,
-          shadowColor: COLORS.primary,
-          paddingHorizontal: 12,
-          marginHorizontal: 12,
-          borderRadius: 19,
-          marginBottom: 25,
+          borderTopWidth: 1,    // React Navigation adds a default top border, this overrides it safely
 
-
+          // Shadows
+          elevation: 8,         // Android shadow
+          shadowColor: COLORS.shadow, // iOS shadow
           shadowOffset: {
             width: 0,
-            height: 3,
+            height: 4,
           },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOpacity: 0.15,
+          shadowRadius: 10,
         },
 
+        // Item & Label styling adjustments to center everything perfectly in the floating pill
+        tabBarItemStyle: {
+          justifyContent: "center",
+          alignItems: "center",
+          height: 56,          // Match the height of the tab bar
+          paddingTop: 1,       // Push icons slightly down
+        },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "500",
-          marginTop: 2,
-        },
-        tabBarItemStyle: {
-          justifyContent: 'center',
-          alignItems: 'center',
-          paddingVertical: 4,
+          fontWeight: "600",
+          paddingBottom: 8,    // Push text slightly up
         },
       }}
     >
@@ -117,4 +122,3 @@ export default function HomeRoutesLayout() {
     </Tabs>
   );
 }
-

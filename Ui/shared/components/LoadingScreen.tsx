@@ -59,7 +59,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ message = "Loading
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E6F4FE", // Keeping your brand light blue background
+    backgroundColor: COLORS.background, // 👈 Now dynamically matches your active theme background
   },
   content: {
     flex: 1,
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1E293B", // Sits nicely on top of the #E6F4FE background
+    color: COLORS.text, // 👈 Now dynamically matches your active theme text color
     textAlign: "center",
   },
 });
